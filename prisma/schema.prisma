@@ -1,0 +1,315 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users & Authentication
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?   @map("avatar_url")
+  emailVerified Boolean   @default(false) @map("email_verified")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  teams         TeamMember[]
+  ownedTeams    Team[]     @relation("TeamOwner")
+  createdDomains Domain[]  @relation("DomainCreator")
+  createdScans  Scan[]     @relation("ScanCreator")
+  createdConfigs GeneratedConfig[]
+  createdXssTests XssTest[]
+  createdApiKeys ApiKey[]
+  auditLogs     AuditLog[]
+  notificationSettings NotificationSetting[]
+
+  @@map("users")
+}
+
+model Team {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  ownerId   String   @map("owner_id")
+  plan      String   @default("free") // free, pro, enterprise
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  owner     User     @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members   TeamMember[]
+  domains   Domain[]
+  generatedConfigs GeneratedConfig[]
+  xssTests  XssTest[]
+  apiKeys   ApiKey[]
+  auditLogs AuditLog[]
+  notificationSettings NotificationSetting[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  teamId   String   @map("team_id")
+  userId   String   @map("user_id")
+  role     String   @default("member") // owner, admin, member, viewer
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  // Relations
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@map("team_members")
+}
+
+// Domain Management
+model Domain {
+  id                String   @id @default(uuid())
+  teamId            String   @map("team_id")
+  url               String
+  name              String?
+  isActive          Boolean  @default(true) @map("is_active")
+  scanFrequency     String   @default("daily") @map("scan_frequency") // hourly, daily, weekly, manual
+  notifyOnViolations Boolean @default(true) @map("notify_on_violations")
+  createdBy         String?  @map("created_by")
+  createdAt         DateTime @default(now()) @map("created_at")
+  lastScannedAt     DateTime? @map("last_scanned_at")
+
+  // Relations
+  team              Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator           User?    @relation("DomainCreator", fields: [createdBy], references: [id])
+  scans             Scan[]
+  violations        Violation[]
+  violationPatterns ViolationPattern[]
+  generatedConfigs  GeneratedConfig[]
+
+  @@unique([teamId, url])
+  @@index([teamId])
+  @@index([isActive, scanFrequency])
+  @@map("domains")
+}
+
+// Security Scans
+model Scan {
+  id              String   @id @default(uuid())
+  domainId        String   @map("domain_id")
+  scanType        String   @default("full") @map("scan_type") // full, quick, headers-only
+  status          String   @default("pending") // pending, running, completed, failed
+  overallGrade    String?  @map("overall_grade") // A, B, C, D, F
+  overallScore    Int?     @map("overall_score") // 0-100
+  headersDetected Json?    @map("headers_detected")
+  securityScore   Int?     @map("security_score")
+  xssVulnerabilities Json? @map("xss_vulnerabilities")
+  cspPolicy       String?  @map("csp_policy")
+  cspGrade        String?  @map("csp_grade")
+  cspIssues       Json?    @map("csp_issues")
+  scanDurationMs  Int?     @map("scan_duration_ms")
+  errorMessage    String?  @map("error_message")
+  rawHeaders      Json?    @map("raw_headers")
+  scannedAt       DateTime @default(now()) @map("scanned_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  domain          Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  creator         User?    @relation("ScanCreator", fields: [createdBy], references: [id])
+  createdBy       String?  @map("created_by")
+  securityScores  SecurityScore[]
+  generatedConfigs GeneratedConfig[]
+
+  @@index([domainId, scannedAt(sort: Desc)])
+  @@index([status])
+  @@map("scans")
+}
+
+model SecurityScore {
+  id              String   @id @default(uuid())
+  scanId          String   @map("scan_id")
+  headerName      String   @map("header_name")
+  isPresent       Boolean  @default(false) @map("is_present")
+  headerValue     String?  @map("header_value")
+  score           Int?     // 0-100
+  grade           String?
+  issues          Json?    // Array of issues
+  recommendations Json?   // Array of suggestions
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  scan            Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([scanId])
+  @@map("security_scores")
+}
+
+// CSP Violation Reports
+model Violation {
+  id                String   @id @default(uuid())
+  domainId          String   @map("domain_id")
+  documentUri       String   @map("document_uri")
+  blockedUri        String?  @map("blocked_uri")
+  violatedDirective String?  @map("violated_directive")
+  effectiveDirective String? @map("effective_directive")
+  originalPolicy    String?  @map("original_policy")
+  disposition       String?  // enforce or report
+  referrer          String?
+  sourceFile        String?  @map("source_file")
+  lineNumber        Int?     @map("line_number")
+  columnNumber      Int?     @map("column_number")
+  statusCode        Int?     @map("status_code")
+  userAgent         String?  @map("user_agent")
+  ipAddress         String?  @map("ip_address")
+  violationCount    Int      @default(1) @map("violation_count")
+  firstSeenAt       DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt        DateTime @default(now()) @updatedAt @map("last_seen_at")
+  severity          String?  // low, medium, high, critical
+  isFalsePositive   Boolean  @default(false) @map("is_false_positive")
+  notes             String?
+  resolvedAt        DateTime? @map("resolved_at")
+
+  // Relations
+  domain            Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@index([domainId, lastSeenAt(sort: Desc)])
+  @@index([violatedDirective])
+  @@index([blockedUri])
+  @@index([severity, resolvedAt])
+  @@map("violations")
+}
+
+model ViolationPattern {
+  id                String   @id @default(uuid())
+  domainId          String   @map("domain_id")
+  patternHash       String   @unique @map("pattern_hash")
+  violatedDirective String?  @map("violated_directive")
+  blockedUri        String?
+  occurrenceCount   Int      @default(0) @map("occurrence_count")
+  firstOccurrence   DateTime? @map("first_occurrence")
+  lastOccurrence    DateTime? @map("last_occurrence")
+  severity          String?
+  suggestedFix      Json?    @map("suggested_fix")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  // Relations
+  domain            Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@index([domainId])
+  @@index([occurrenceCount(sort: Desc)])
+  @@map("violation_patterns")
+}
+
+// Generated CSP Configurations
+model GeneratedConfig {
+  id              String   @id @default(uuid())
+  teamId          String   @map("team_id")
+  domainId        String?  @map("domain_id")
+  framework       String   // nextjs-app, nextjs-pages, express, etc.
+  cspType         String?  @map("csp_type") // nonce-based, hash-based, strict-dynamic
+  generatedCode   String   @map("generated_code")
+  configOptions   Json?    @map("config_options")
+  downloadCount   Int      @default(0) @map("download_count")
+  isFavorite      Boolean  @default(false) @map("is_favorite")
+  createdBy       String?  @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  team            Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  domain          Domain?  @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  creator         User?    @relation(fields: [createdBy], references: [id])
+
+  @@index([teamId, createdAt(sort: Desc)])
+  @@map("generated_configs")
+}
+
+// XSS Test Results
+model XssTest {
+  id                String   @id @default(uuid())
+  teamId            String   @map("team_id")
+  payload           String
+  cspPolicy         String?  @map("csp_policy")
+  sanitizer         String?  // none, dompurify, custom
+  context           String?  // html, attribute, javascript, url
+  wasBlocked        Boolean? @map("was_blocked")
+  executedSuccessfully Boolean? @map("executed_successfully")
+  sanitizedOutput   String?  @map("sanitized_output")
+  violationTriggered Boolean? @map("violation_triggered")
+  testName          String?  @map("test_name")
+  createdBy         String?  @map("created_by")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  // Relations
+  team              Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator           User?    @relation(fields: [createdBy], references: [id])
+
+  @@index([teamId, createdAt(sort: Desc)])
+  @@map("xss_tests")
+}
+
+// API Keys
+model ApiKey {
+  id          String    @id @default(uuid())
+  teamId      String    @map("team_id")
+  keyHash     String    @unique @map("key_hash")
+  keyPrefix   String    @map("key_prefix")
+  name        String?
+  scopes      Json?     // ['scan:read', 'scan:write', 'violations:read']
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  createdBy   String?   @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  team        Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator     User?     @relation(fields: [createdBy], references: [id])
+
+  @@index([teamId])
+  @@map("api_keys")
+}
+
+// Audit Logs
+model AuditLog {
+  id            String   @id @default(uuid())
+  teamId        String   @map("team_id")
+  userId        String?  @map("user_id")
+  action        String
+  resourceType  String?  @map("resource_type")
+  resourceId    String?  @map("resource_id")
+  metadata      Json?
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([teamId, createdAt(sort: Desc)])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+// Notification Settings
+model NotificationSetting {
+  teamId                    String   @map("team_id")
+  userId                    String   @map("user_id")
+  emailEnabled              Boolean  @default(true) @map("email_enabled")
+  slackWebhookUrl           String?  @map("slack_webhook_url")
+  discordWebhookUrl         String?  @map("discord_webhook_url")
+  notifyOnNewViolations     Boolean  @default(true) @map("notify_on_new_violations")
+  notifyOnScoreChange       Boolean  @default(true) @map("notify_on_score_change")
+  notifyOnScanFailure       Boolean  @default(true) @map("notify_on_scan_failure")
+  violationSeverityThreshold String  @default("medium") @map("violation_severity_threshold")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  team                      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@map("notification_settings")
+}
