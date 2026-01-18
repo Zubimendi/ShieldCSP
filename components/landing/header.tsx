@@ -39,11 +39,11 @@ export function Header() {
             </div>
 
             {/* Buttons */}
-            <Button variant="ghost" className="text-white hover:bg-white/10">
-              Login
+            <Button variant="ghost" className="text-white hover:bg-white/10" asChild>
+              <Link href="/dashboard">Login</Link>
             </Button>
-            <Button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white">
-              Get Started
+            <Button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white" asChild>
+              <Link href="/dashboard">Get Started</Link>
             </Button>
           </div>
         </div>

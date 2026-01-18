@@ -1,6 +1,19 @@
-import { redirect } from 'next/navigation';
+import { Header } from '@/components/landing/header';
+import { Hero } from '@/components/landing/hero';
+import { Stats } from '@/components/landing/stats';
+import { Features } from '@/components/landing/features';
+import { Pricing } from '@/components/landing/pricing';
+import { Footer } from '@/components/landing/footer';
 
 export default function HomePage() {
-  // Landing page is at /(marketing)/page.tsx
-  // Dashboard redirect is handled by auth middleware
+  return (
+    <div className="min-h-screen bg-[#0a0e27] text-white">
+      <Header />
+      <Hero />
+      <Stats />
+      <Features />
+      <Pricing />
+      <Footer />
+    </div>
+  );
 }
