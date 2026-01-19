@@ -18,14 +18,11 @@ import {
   Cell, 
   ResponsiveContainer, 
   Tooltip, 
-  Legend,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
-  Area,
-  AreaChart
 } from 'recharts';
 import {
   Table,
@@ -91,8 +88,6 @@ const recentScans = [
     maxScore: 100,
   },
 ];
-
-const COLORS = ['#14b8a6', '#3b82f6', '#6b7280', '#ef4444'];
 
 export default function DashboardPage() {
   return (

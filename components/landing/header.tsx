@@ -22,7 +22,7 @@ export function Header() {
             <Link href="#features" className="text-sm hover:text-[#14b8a6] transition-colors">
               Features
             </Link>
-            <Link href="#pricing" className="text-sm hover:text-[#14b8a6] transition-colors">
+            <Link href="/pricing" className="text-sm hover:text-[#14b8a6] transition-colors">
               Pricing
             </Link>
             <Link href="#docs" className="text-sm hover:text-[#14b8a6] transition-colors">
@@ -40,10 +40,10 @@ export function Header() {
 
             {/* Buttons */}
             <Button variant="ghost" className="text-white hover:bg-white/10" asChild>
-              <Link href="/dashboard">Login</Link>
+              <Link href="/login">Login</Link>
             </Button>
             <Button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white" asChild>
-              <Link href="/dashboard">Get Started</Link>
+              <Link href="/login">Get Started</Link>
             </Button>
           </div>
         </div>

@@ -38,7 +38,7 @@ export function Hero() {
               size="lg"
               className="bg-[#14b8a6] hover:bg-[#0d9488] text-white text-lg px-8"
             >
-              <Link href="/dashboard/scanner">
+              <Link href="/signup">
                 Scan Your Site Now
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>

@@ -104,7 +104,7 @@ export function Pricing() {
                 }`}
                 size="lg"
               >
-                <Link href="/dashboard">{plan.buttonText}</Link>
+                <Link href={plan.name === 'ENTERPRISE' ? '/login' : '/signup'}>{plan.buttonText}</Link>
               </Button>
             </CardFooter>
           </Card>

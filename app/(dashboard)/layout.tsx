@@ -1,4 +1,5 @@
-import { Navbar } from '@/components/dashboard/navbar';
+import { Sidebar } from '@/components/dashboard/sidebar';
+import { TopHeader } from '@/components/dashboard/top-header';
 
 export default function DashboardLayout({
   children,
@@ -6,11 +7,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="container mx-auto px-4 py-8">
-        {children}
-      </main>
+    <div className="flex h-screen bg-[#0f2023] text-white overflow-hidden">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <TopHeader />
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
