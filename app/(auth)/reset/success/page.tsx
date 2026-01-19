@@ -40,7 +40,7 @@ export default function ResetSuccessPage() {
             </Link>
             <p className="mt-6 text-xs text-slate-500">
               Didn&apos;t perform this action?{' '}
-              <Link href="#" className="text-[#07b6d5] hover:underline">
+              <Link href="/docs" className="text-[#07b6d5] hover:underline">
                 Contact Support
               </Link>
             </p>
@@ -51,10 +51,10 @@ export default function ResetSuccessPage() {
       {/* Footer */}
       <footer className="py-8 px-8 flex flex-col items-center gap-4 text-[11px] text-slate-500">
         <div className="flex flex-wrap justify-center gap-6">
-          <Link href="#" className="hover:text-[#07b6d5] transition-colors">
+          <Link href="/docs" className="hover:text-[#07b6d5] transition-colors">
             Privacy Policy
           </Link>
-          <Link href="#" className="hover:text-[#07b6d5] transition-colors">
+          <Link href="/docs" className="hover:text-[#07b6d5] transition-colors">
             Terms of Service
           </Link>
           <Link href="/docs" className="hover:text-[#07b6d5] transition-colors">

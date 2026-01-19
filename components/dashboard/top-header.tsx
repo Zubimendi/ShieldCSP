@@ -13,15 +13,15 @@ import {
 
 export function TopHeader() {
   return (
-    <div className="flex h-16 items-center justify-between border-b border-[#224349] bg-[#0f2023]/80 backdrop-blur-md px-6">
+    <div className="flex h-20 items-center justify-between border-b border-[#224349] bg-[#0f2023]/80 backdrop-blur-md px-6">
       {/* Left: Workspace Selector */}
       <div className="flex items-center gap-4">
-        <div>
-          <label className="text-xs text-gray-400 uppercase tracking-wider">
-            ACTIVE WORKSPACE
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] text-gray-400 uppercase tracking-wider">
+            Active Workspace
           </label>
           <Select defaultValue="engineering-ops">
-            <SelectTrigger className="w-[200px] border-[#224349] bg-transparent text-white">
+            <SelectTrigger className="w-[220px] border-[#224349] bg-[#0f2023] text-white rounded-lg text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Globe, Scan, AlertTriangle, ShieldCheck, FlaskConical, User } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Shield, LayoutDashboard, Globe, Scan, AlertTriangle, ShieldCheck, FlaskConical, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { dummyUser } from '@/lib/data/dummy';
@@ -18,7 +18,17 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const user = dummyUser;
+
+  const handleLogout = () => {
+    // Clear demo auth cookies and return to login
+    document.cookie = 'authenticated=; Max-Age=0; path=/';
+    document.cookie = 'userEmail=; Max-Age=0; path=/';
+    document.cookie = 'userName=; Max-Age=0; path=/';
+    router.push('/login');
+    router.refresh();
+  };
 
   return (
     <div className="flex h-screen w-64 flex-col border-r border-[#224349] bg-[#0f2023]">
@@ -57,8 +67,8 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User Profile */}
-      <div className="border-t border-[#224349] p-4">
+      {/* User Profile + Logout */}
+      <div className="border-t border-[#224349] p-4 space-y-3">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.avatarUrl} alt={user.name || user.email} />
@@ -73,6 +83,14 @@ export function Sidebar() {
             <p className="text-xs text-gray-400">ADMIN</p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#224349] bg-[#0f2023] px-3 py-2 text-xs font-semibold text-[#8fc3cc] hover:bg-[#1b2a30] hover:text-white transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Log out
+        </button>
       </div>
     </div>
   );

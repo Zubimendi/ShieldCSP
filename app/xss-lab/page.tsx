@@ -111,7 +111,7 @@ export default function XssLabPage() {
             </div>
             <div className="flex flex-col gap-1">
               <Link
-                href="#"
+                href="/xss-lab#payload-library"
                 className="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8fc3cc] hover:bg-[#224349] transition-all"
               >
                 <BookOpen className="h-5 w-5" />
@@ -122,14 +122,14 @@ export default function XssLabPage() {
                 <p className="text-sm font-medium">Active Lab</p>
               </Link>
               <Link
-                href="#"
+                href="/scanner"
                 className="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8fc3cc] hover:bg-[#224349] transition-all"
               >
                 <History className="h-5 w-5" />
                 <p className="text-sm font-medium">Scan History</p>
               </Link>
               <Link
-                href="#"
+                href="/dashboard"
                 className="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8fc3cc] hover:bg-[#224349] transition-all"
               >
                 <Settings className="h-5 w-5" />
@@ -170,7 +170,7 @@ export default function XssLabPage() {
           {/* Toolbar/Breadcrumbs */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#224349]">
             <div className="flex items-center gap-2">
-              <Link href="#" className="text-[#8fc3cc] text-sm font-medium hover:text-white">
+              <Link href="/scanner" className="text-[#8fc3cc] text-sm font-medium hover:text-white">
                 Security Tools
               </Link>
               <span className="text-[#8fc3cc] text-sm opacity-50">/</span>
@@ -180,7 +180,7 @@ export default function XssLabPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-[#224349] border-[#224349] text-white hover:bg-[#2b545c] text-xs font-bold"
+                className="bg-[#224349] border-[#224349] text-[#8fc3cc] hover:bg-[#2b545c] hover:text-white text-xs font-bold"
               >
                 <Share2 className="h-3 w-3 mr-1" />
                 Export
@@ -188,7 +188,7 @@ export default function XssLabPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-[#224349] border-[#224349] text-white hover:bg-[#2b545c] text-xs font-bold"
+                className="bg-[#224349] border-[#224349] text-[#8fc3cc] hover:bg-[#2b545c] hover:text-white text-xs font-bold"
               >
                 <Save className="h-3 w-3 mr-1" />
                 Save
@@ -438,7 +438,7 @@ export default function XssLabPage() {
           <Link href="/docs" className="hover:text-white cursor-pointer transition-colors">
             Documentation
           </Link>
-          <Link href="#" className="hover:text-white cursor-pointer transition-colors">
+          <Link href="/docs" className="hover:text-white cursor-pointer transition-colors">
             Support API
           </Link>
           <div className="bg-[#07b6d5]/10 px-2 py-0.5 rounded text-[#07b6d5] font-bold">V1.4.2-STABLE</div>

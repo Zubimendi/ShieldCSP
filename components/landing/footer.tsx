@@ -68,13 +68,13 @@ export function Footer() {
             <h3 className="font-semibold mb-4">Connect</h3>
             <div className="flex items-center gap-3">
               <Link
-                href="#"
+                href="mailto:hello@shieldcsp.io"
                 className="h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
               >
                 <Mail className="h-5 w-5 text-gray-400" />
               </Link>
               <Link
-                href="#"
+                href="https://github.com/yourusername/shieldcsp"
                 className="h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
               >
                 <Github className="h-5 w-5 text-gray-400" />

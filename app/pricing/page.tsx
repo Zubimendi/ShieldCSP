@@ -321,19 +321,19 @@ export default function PricingPage() {
               </span>
             </div>
             <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
-              <Link href="#" className="hover:text-[#07b6d5] transition-colors">
+              <Link href="/docs" className="hover:text-[#07b6d5] transition-colors">
                 Privacy Policy
               </Link>
               <Link href="/docs" className="hover:text-[#07b6d5] transition-colors">
                 Documentation
               </Link>
-              <Link href="#" className="hover:text-[#07b6d5] transition-colors">
+              <Link href="/codegen" className="hover:text-[#07b6d5] transition-colors">
                 API Keys
               </Link>
-              <Link href="#" className="hover:text-[#07b6d5] transition-colors">
+              <Link href="/docs" className="hover:text-[#07b6d5] transition-colors">
                 Support Status
               </Link>
-              <Link href="#" className="hover:text-[#07b6d5] transition-colors">
+              <Link href="/docs" className="hover:text-[#07b6d5] transition-colors">
                 Contact Us
               </Link>
             </div>

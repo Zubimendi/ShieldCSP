@@ -522,16 +522,16 @@ export default function DomainAnalysisPage({ params }: { params: { domain: strin
               ShieldCSP Enterprise Edition v2.4
             </div>
             <div className="flex items-center gap-6">
-              <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <a href="/docs" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Privacy Policy
               </a>
-              <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <a href="/docs" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Documentation
               </a>
-              <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <a href="/codegen" className="text-sm text-gray-400 hover:text-white transition-colors">
                 API Keys
               </a>
-              <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <a href="/docs" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Support
               </a>
             </div>

@@ -138,10 +138,10 @@ export default function DocsPage() {
               </div>
             </div>
             <div className="flex items-center gap-4 ml-8">
-              <Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <Link href="/docs" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Changelog
               </Link>
-              <Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <Link href="/docs" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Support
               </Link>
               <Button variant="outline" size="sm" className="border-[#224349] bg-[#224349] text-[#8fc3cc] hover:bg-[#2b545c]">
@@ -252,11 +252,11 @@ export default function RootLayout({ children }) {
 
             {/* Bottom Navigation */}
             <div className="flex items-center justify-between pt-8 border-t border-[#224349]">
-              <Link href="#" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+              <Link href="/docs" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
                 ← PREVIOUS
                 <span className="text-white">Introduction</span>
               </Link>
-              <Link href="#" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+              <Link href="/docs" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
                 <span className="text-white">API Reference</span>
                 →
               </Link>
@@ -314,16 +314,16 @@ export default function RootLayout({ children }) {
               ShieldCSP Technical Documentation v4.2.0
             </div>
             <div className="flex items-center gap-6">
-              <Link href="#" className="text-sm text-gray-400 hover:text-[#14b8a6] transition-colors">
+              <Link href="https://github.com/yourusername/shieldcsp" className="text-sm text-gray-400 hover:text-[#14b8a6] transition-colors">
                 GitHub
               </Link>
-              <Link href="#" className="text-sm text-gray-400 hover:text-[#14b8a6] transition-colors">
+              <Link href="https://twitter.com" className="text-sm text-gray-400 hover:text-[#14b8a6] transition-colors">
                 Twitter
               </Link>
-              <Link href="#" className="text-sm text-gray-400 hover:text-[#14b8a6] transition-colors">
+              <Link href="/docs" className="text-sm text-gray-400 hover:text-[#14b8a6] transition-colors">
                 Privacy
               </Link>
-              <Link href="#" className="text-sm text-gray-400 hover:text-[#14b8a6] transition-colors">
+              <Link href="/docs" className="text-sm text-gray-400 hover:text-[#14b8a6] transition-colors">
                 Cookies
               </Link>
             </div>

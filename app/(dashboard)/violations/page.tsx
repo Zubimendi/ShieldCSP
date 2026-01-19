@@ -71,54 +71,8 @@ export default function ViolationsDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#0f2023] text-white">
-      {/* Top Navigation */}
-      <nav className="border-b border-[#224349] bg-[#0f2023]/80 backdrop-blur-md">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-[#07b6d5] flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">ShieldCSP</span>
-              </Link>
-              <div className="hidden md:flex items-center gap-6">
-                <Link href="/dashboard" className="text-sm text-gray-400 hover:text-white transition-colors">
-                  Dashboard
-                </Link>
-                <Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
-                  Policies
-                </Link>
-                <Link href="/violations" className="text-sm text-[#07b6d5] border-b-2 border-[#07b6d5] pb-1">
-                  Intelligence
-                </Link>
-                <Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
-                  Reports
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative hidden md:block">
-                <input
-                  type="search"
-                  placeholder="Search incidents..."
-                  className="w-72 bg-white/5 border border-white/10 rounded-full px-10 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                />
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
-              </div>
-              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-white/5">
-                <Bell className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-white/5">
-                <User className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Header + Filters */}
-      <div className="container mx-auto px-6 pt-8">
+      <div className="container mx-auto px-6 pt-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold mb-1">Violations Dashboard</h1>
@@ -433,10 +387,10 @@ export default function ViolationsDashboardPage() {
             <Link href="/docs" className="hover:text-[#14b8a6]">
               Documentation
             </Link>
-            <Link href="#" className="hover:text-[#14b8a6]">
+            <Link href="/dashboard" className="hover:text-[#14b8a6]">
               API Status
             </Link>
-            <Link href="#" className="hover:text-[#14b8a6]">
+            <Link href="/docs" className="hover:text-[#14b8a6]">
               Privacy Policy
             </Link>
           </div>

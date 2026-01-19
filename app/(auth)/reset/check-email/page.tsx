@@ -23,7 +23,7 @@ export default function ResetCheckEmailPage() {
           </div>
         </div>
         <div className="hidden md:flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-          <Link href="#" className="hover:text-white transition-colors">
+          <Link href="/" className="hover:text-white transition-colors">
             Status
           </Link>
           <Link href="/docs" className="hover:text-white transition-colors">
