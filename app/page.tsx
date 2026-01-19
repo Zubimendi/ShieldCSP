@@ -7,13 +7,15 @@ import { Footer } from '@/components/landing/footer';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#0f2023] text-white">
-      <Header />
-      <Hero />
-      <Stats />
-      <Features />
-      <Pricing />
-      <Footer />
+    <div className="relative min-h-screen overflow-x-hidden bg-[#0A0F1E]">
+      <div className="bg-grid">
+        <Header />
+        <Hero />
+        <Stats />
+        <Features />
+        <Pricing />
+        <Footer />
+      </div>
     </div>
   );
 }
