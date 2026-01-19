@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sendNotification } from "@/lib/notifications/service"
 import { logSecurityEvent } from "@/lib/audit"
+import { invalidateDomainCache, invalidateDashboardCache } from "@/lib/cache"
 import crypto from "crypto"
 
 interface CSPViolationReport {
@@ -157,6 +158,12 @@ export async function POST(req: NextRequest) {
 
     // Send notification and audit log if domain exists and this is a new pattern or first occurrence
     if (domain && (isNewPattern || violation.violationCount === 1)) {
+      // Invalidate caches for new violations
+      await Promise.all([
+        invalidateDomainCache(domain.id),
+        invalidateDashboardCache(domain.teamId),
+      ]);
+
       // Audit log security event
       await logSecurityEvent(domain.teamId, 'violation-detected', {
         violationId: violation.id,

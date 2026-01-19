@@ -9,6 +9,7 @@ import { parseCSP, CSPPolicy } from './csp-parser';
 import { prisma } from '@/lib/prisma';
 import { sendNotification } from '@/lib/notifications/service';
 import { logSecurityEvent } from '@/lib/audit';
+import { invalidateDomainCache, invalidateDashboardCache, setCache, cacheKeys } from '@/lib/cache';
 
 export interface ScanResult {
   success: boolean;
@@ -129,6 +130,20 @@ export async function executeScan(
       where: { id: domain.id },
       data: { lastScannedAt: new Date() },
     });
+
+    // Cache the scan result
+    await setCache(cacheKeys.scanResult(scan.id), {
+      scan,
+      headers: fetchResult.headers,
+      analysis,
+      cspPolicy,
+    }, 3600); // 1 hour TTL
+
+    // Invalidate domain and dashboard caches
+    await Promise.all([
+      invalidateDomainCache(domain.id),
+      invalidateDashboardCache(domain.teamId),
+    ]);
 
     // Audit log scan completion
     await logSecurityEvent(domain.teamId, 'score-change', {

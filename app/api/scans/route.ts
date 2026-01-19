@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { executeScan } from "@/lib/scanner/scan-executor"
+import { withCache, cacheKeys, invalidateDomainCache, invalidateDashboardCache } from "@/lib/cache"
 
 const startScanSchema = z.object({
   domainId: z.string().uuid(),
@@ -16,25 +17,35 @@ export async function GET(req: NextRequest) {
     const domainId = searchParams.get("domainId")
     const limit = parseInt(searchParams.get("limit") || "20", 10)
 
-    const where = domainId ? { domainId } : {}
+    const cacheKey = domainId 
+      ? `${cacheKeys.scanResultsByDomain(domainId)}:limit:${limit}`
+      : `scans:recent:limit:${limit}`
 
-    const scans = await prisma.scan.findMany({
-      where,
-      orderBy: { scannedAt: "desc" },
-      take: limit,
-      include: {
-        domain: {
-          select: {
-            id: true,
-            url: true,
-            name: true,
+    const scans = await withCache(
+      cacheKey,
+      async () => {
+        const where = domainId ? { domainId } : {}
+
+        return await prisma.scan.findMany({
+          where,
+          orderBy: { scannedAt: "desc" },
+          take: limit,
+          include: {
+            domain: {
+              select: {
+                id: true,
+                url: true,
+                name: true,
+              },
+            },
+            securityScores: {
+              take: 15, // Limit security scores per scan
+            },
           },
-        },
-        securityScores: {
-          take: 15, // Limit security scores per scan
-        },
+        })
       },
-    })
+      600, // 10 minutes TTL
+    )
 
     return NextResponse.json({ scans })
   } catch (error) {
@@ -89,6 +100,14 @@ export async function POST(req: NextRequest) {
         securityScores: true,
       },
     })
+
+    // Invalidate caches after new scan
+    if (completedScan?.domain) {
+      await Promise.all([
+        invalidateDomainCache(completedScan.domain.id),
+        invalidateDashboardCache(completedScan.domain.teamId),
+      ]);
+    }
 
     return NextResponse.json({ scan: completedScan }, { status: 201 })
   } catch (error) {
