@@ -220,10 +220,10 @@ export default function DashboardPage() {
             <div className="p-6 border-b border-[#224349] flex items-center justify-between">
               <h3 className="font-bold text-lg">Recent Scans</h3>
               <div className="flex gap-2">
-                <button className="cursor-pointer text-xs font-bold px-3 py-1.5 rounded-lg bg-[#07b6d5] text-[#102023] hover:bg-[#07b6d5]/90 transition-all shadow-lg shadow-[#07b6d5]/20">
+                <button className="cursor-pointer text-xs font-bold px-3 py-1.5 rounded-lg bg-[#07b6d5] hover:brightness-110 text-[#102023] transition-all shadow-lg shadow-[#07b6d5]/10">
                   Export CSV
                 </button>
-                <button className="cursor-pointer text-xs font-bold px-3 py-1.5 rounded-lg bg-[#07b6d5] text-[#102023] hover:bg-[#07b6d5]/90 transition-all shadow-lg shadow-[#07b6d5]/20">
+                <button className="cursor-pointer text-xs font-bold px-3 py-1.5 rounded-lg bg-[#07b6d5] hover:brightness-110 text-[#102023] transition-all shadow-lg shadow-[#07b6d5]/10">
                   View All
                 </button>
               </div>

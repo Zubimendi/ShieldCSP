@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { signOut, useSession } from 'next-auth/react';
 import { Shield, LayoutDashboard, Globe, Scan, AlertTriangle, ShieldCheck, FlaskConical, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { dummyUser } from '@/lib/data/dummy';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -19,13 +19,16 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const user = dummyUser;
+  const { data: session } = useSession();
+  
+  const user = session?.user || {
+    email: 'user@example.com',
+    name: 'User',
+    image: null,
+  };
 
-  const handleLogout = () => {
-    // Clear demo auth cookies and return to login
-    document.cookie = 'authenticated=; Max-Age=0; path=/';
-    document.cookie = 'userEmail=; Max-Age=0; path=/';
-    document.cookie = 'userName=; Max-Age=0; path=/';
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
     router.push('/login');
     router.refresh();
   };
@@ -71,7 +74,7 @@ export function Sidebar() {
       <div className="border-t border-[#224349] p-4 space-y-3">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatarUrl} alt={user.name || user.email} />
+            <AvatarImage src={user.image || undefined} alt={user.name || user.email} />
             <AvatarFallback>
               {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
             </AvatarFallback>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { executeScan } from "@/lib/scanner/scan-executor"
 
 const startScanSchema = z.object({
   domainId: z.string().uuid(),
@@ -9,13 +10,29 @@ const startScanSchema = z.object({
 
 // GET /api/scans
 // Basic listing of recent scans across all domains (limited for dashboard)
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const searchParams = req.nextUrl.searchParams
+    const domainId = searchParams.get("domainId")
+    const limit = parseInt(searchParams.get("limit") || "20", 10)
+
+    const where = domainId ? { domainId } : {}
+
     const scans = await prisma.scan.findMany({
+      where,
       orderBy: { scannedAt: "desc" },
-      take: 20,
+      take: limit,
       include: {
-        domain: true,
+        domain: {
+          select: {
+            id: true,
+            url: true,
+            name: true,
+          },
+        },
+        securityScores: {
+          take: 15, // Limit security scores per scan
+        },
       },
     })
 
@@ -30,32 +47,50 @@ export async function GET() {
 }
 
 // POST /api/scans
-// Creates a new scan record and returns it (the actual HTTP scanning job will be wired later)
+// Creates a new scan record and executes the actual security scan
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json()
     const { domainId, scanType } = startScanSchema.parse(json)
 
-    const domain = await prisma.domain.findUnique({
-      where: { id: domainId },
-    })
-
-    if (!domain) {
-      return NextResponse.json(
-        { error: "Domain not found" },
-        { status: 404 },
-      )
-    }
-
-    const scan = await prisma.scan.create({
+    // Create pending scan record first
+    const pendingScan = await prisma.scan.create({
       data: {
         domainId,
         scanType,
-        status: "pending",
+        status: "running",
       },
     })
 
-    return NextResponse.json({ scan }, { status: 201 })
+    // Execute the scan (this will update the scan record)
+    const result = await executeScan(domainId, scanType)
+
+    if (!result.success) {
+      // Update scan to failed status
+      await prisma.scan.update({
+        where: { id: pendingScan.id },
+        data: {
+          status: "failed",
+          errorMessage: result.error,
+        },
+      })
+
+      return NextResponse.json(
+        { error: result.error, scanId: pendingScan.id },
+        { status: 500 },
+      )
+    }
+
+    // Fetch the completed scan with all relations
+    const completedScan = await prisma.scan.findUnique({
+      where: { id: result.scanId },
+      include: {
+        domain: true,
+        securityScores: true,
+      },
+    })
+
+    return NextResponse.json({ scan: completedScan }, { status: 201 })
   } catch (error) {
     console.error("[POST /api/scans]", error)
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { Shield, User, Mail, Lock, Eye, EyeOff, TrendingUp, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -30,12 +31,42 @@ export default function SignupPage() {
       return;
     }
 
-    document.cookie = 'authenticated=true; path=/; max-age=86400';
-    document.cookie = `userEmail=${formData.email}; path=/; max-age=86400`;
-    document.cookie = `userName=${formData.fullName}; path=/; max-age=86400`;
+    try {
+      // Create account
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          name: formData.fullName,
+          password: formData.password,
+        }),
+      });
 
-    router.push('/dashboard');
-    router.refresh();
+      if (response.ok) {
+        // Auto sign in after signup
+        const result = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        });
+
+        if (result?.ok) {
+          router.push('/dashboard');
+          router.refresh();
+        } else {
+          // Account created but sign in failed - redirect to login
+          router.push('/login?message=Account created. Please sign in.');
+        }
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to create account');
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (

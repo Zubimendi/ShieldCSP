@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { Shield, Mail, Lock, ArrowRight, Github } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,17 +22,23 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    // Hardcoded authentication
-    if (email === 'example@gmail.com' && password === 'password123') {
-      // Set authentication cookie
-      document.cookie = 'authenticated=true; path=/; max-age=86400'; // 24 hours
-      document.cookie = `userEmail=${email}; path=/; max-age=86400`;
-      
-      // Redirect to dashboard
-      router.push('/dashboard');
-      router.refresh();
-    } else {
-      setError('Invalid email or password');
+    try {
+      // Sign in with NextAuth
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        router.push('/dashboard');
+        router.refresh();
+      } else {
+        setError(result?.error || 'Invalid email or password');
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
       setLoading(false);
     }
   };
