@@ -3,16 +3,18 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { Shield, LayoutDashboard, Globe, Scan, AlertTriangle, ShieldCheck, FlaskConical, LogOut } from 'lucide-react';
+import { Shield, LayoutDashboard, Globe, Scan, AlertTriangle, ShieldCheck, FlaskConical, History, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Audit Logs', href: '/audit-logs', icon: History },
   { name: 'Domains', href: '/domains', icon: Globe },
   { name: 'Scans', href: '/scanner', icon: Scan },
   { name: 'Violations', href: '/violations', icon: AlertTriangle },
   { name: 'Policies', href: '/policies', icon: ShieldCheck },
+  { name: 'Team', href: '/team', icon: ShieldCheck },
   { name: 'Lab', href: '/xss-lab', icon: FlaskConical },
 ];
 
