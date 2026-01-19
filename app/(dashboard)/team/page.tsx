@@ -1,3 +1,7 @@
+'use client';
+
+import { UserPlus, Users, TrendingUp, Hourglass, Search, Filter, ChevronDown, MoreHorizontal, ChevronLeft, ChevronRight, Shield, Sparkles } from 'lucide-react';
+
 export default function TeamManagementPage() {
   return (
     <div className="flex h-full min-h-screen bg-[#0f2023] text-slate-100">
@@ -28,7 +32,7 @@ export default function TeamManagementPage() {
               </p>
             </div>
             <button className="bg-[#07b6d5] hover:bg-[#08c4e7] text-[#0f2023] font-bold px-6 py-3 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-[#07b6d5]/30 text-sm">
-              <span className="material-symbols-outlined text-base">person_add</span>
+              <UserPlus className="h-4 w-4" />
               Invite Member
             </button>
           </div>
@@ -41,13 +45,13 @@ export default function TeamManagementPage() {
             <div className="flex items-center justify-between">
               <p className="text-[#8fc3cc] text-sm font-medium">Total Members</p>
               <div className="text-[#07b6d5] bg-[#07b6d5]/10 p-2 rounded-lg">
-                <span className="material-symbols-outlined text-base">groups</span>
+                <Users className="h-4 w-4" />
               </div>
             </div>
             <div>
               <p className="text-3xl font-bold text-white">24 / 50</p>
               <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">trending_up</span>
+                <TrendingUp className="h-3 w-3" />
                 +2% from last month
               </p>
             </div>
@@ -58,7 +62,7 @@ export default function TeamManagementPage() {
             <div className="flex items-center justify-between">
               <p className="text-[#8fc3cc] text-sm font-medium">Pending Invites</p>
               <div className="text-amber-400 bg-amber-400/10 p-2 rounded-lg">
-                <span className="material-symbols-outlined text-base">hourglass_top</span>
+                <Hourglass className="h-4 w-4" />
               </div>
             </div>
             <div>
@@ -90,9 +94,7 @@ export default function TeamManagementPage() {
               <h3 className="font-bold text-lg text-white">Member Directory</h3>
               <div className="flex gap-3">
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#8fc3cc] text-sm">
-                    search
-                  </span>
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8fc3cc]" />
                   <input
                     type="text"
                     placeholder="Search members..."
@@ -100,7 +102,7 @@ export default function TeamManagementPage() {
                   />
                 </div>
                 <button className="flex items-center gap-2 text-sm text-[#8fc3cc] border border-white/10 px-3 py-2 rounded-lg hover:bg-white/5">
-                  <span className="material-symbols-outlined text-sm">filter_list</span>
+                  <Filter className="h-4 w-4" />
                   Filter
                 </button>
               </div>
@@ -134,9 +136,7 @@ export default function TeamManagementPage() {
                     <div className="relative inline-block w-48">
                       <button className="flex items-center justify-between w-full bg-[#0f2023]/40 border border-white/10 px-3 py-1.5 rounded-lg text-xs text-white">
                         Admin
-                        <span className="material-symbols-outlined text-xs">
-                          keyboard_arrow_down
-                        </span>
+                        <ChevronDown className="h-3 w-3" />
                       </button>
                     </div>
                   </td>
@@ -149,7 +149,7 @@ export default function TeamManagementPage() {
                   <td className="px-6 py-4 text-xs text-[#8fc3cc]">2 hours ago</td>
                   <td className="px-6 py-4 text-right">
                     <button className="text-[#8fc3cc] hover:text-white">
-                      <span className="material-symbols-outlined">more_horiz</span>
+                      <MoreHorizontal className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -171,9 +171,7 @@ export default function TeamManagementPage() {
                     <div className="relative inline-block w-48">
                       <button className="flex items-center justify-between w-full bg-[#0f2023]/40 border border-white/10 px-3 py-1.5 rounded-lg text-xs text-white">
                         Editor
-                        <span className="material-symbols-outlined text-xs">
-                          keyboard_arrow_down
-                        </span>
+                        <ChevronDown className="h-3 w-3" />
                       </button>
                     </div>
                   </td>
@@ -186,7 +184,7 @@ export default function TeamManagementPage() {
                   <td className="px-6 py-4 text-xs text-[#8fc3cc]">N/A</td>
                   <td className="px-6 py-4 text-right">
                     <button className="text-[#8fc3cc] hover:text-white">
-                      <span className="material-symbols-outlined">more_horiz</span>
+                      <MoreHorizontal className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -208,9 +206,7 @@ export default function TeamManagementPage() {
                     <div className="relative inline-block w-48">
                       <button className="flex items-center justify-between w-full bg-[#0f2023]/40 border border-white/10 px-3 py-1.5 rounded-lg text-xs text-white">
                         Viewer
-                        <span className="material-symbols-outlined text-xs">
-                          keyboard_arrow_down
-                        </span>
+                        <ChevronDown className="h-3 w-3" />
                       </button>
                     </div>
                   </td>
@@ -223,7 +219,7 @@ export default function TeamManagementPage() {
                   <td className="px-6 py-4 text-xs text-[#8fc3cc]">4 days ago</td>
                   <td className="px-6 py-4 text-right">
                     <button className="text-[#8fc3cc] hover:text-white">
-                      <span className="material-symbols-outlined">more_horiz</span>
+                      <MoreHorizontal className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -234,7 +230,7 @@ export default function TeamManagementPage() {
               <p className="text-xs text-[#8fc3cc]">Showing 3 of 24 members</p>
               <div className="flex gap-2">
                 <button className="h-8 w-8 flex items-center justify-center rounded-lg border border-white/10 text-[#8fc3cc] hover:bg-white/10">
-                  <span className="material-symbols-outlined text-sm">chevron_left</span>
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button className="h-8 w-8 flex items-center justify-center rounded-lg border border-white/10 bg-[#07b6d5]/20 text-[#07b6d5] text-xs font-semibold">
                   1
@@ -243,7 +239,7 @@ export default function TeamManagementPage() {
                   2
                 </button>
                 <button className="h-8 w-8 flex items-center justify-center rounded-lg border border-white/10 text-[#8fc3cc] hover:bg-white/10">
-                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -254,7 +250,7 @@ export default function TeamManagementPage() {
             {/* Global Permissions */}
             <div className="rounded-2xl p-6 bg-white/[0.03] border border-white/10 backdrop-blur-xl">
               <div className="flex items-center gap-2 mb-6">
-                <span className="material-symbols-outlined text-[#07b6d5]">security</span>
+                <Shield className="h-5 w-5 text-[#07b6d5]" />
                 <h3 className="font-bold text-lg text-white">Global Permissions</h3>
               </div>
 
@@ -317,9 +313,7 @@ export default function TeamManagementPage() {
                   Upgrade Workspace
                 </button>
               </div>
-              <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-[#07b6d5]/10 text-[120px] rotate-12">
-                workspace_premium
-              </span>
+              <Sparkles className="absolute -right-4 -bottom-4 h-[120px] w-[120px] text-[#07b6d5]/10 rotate-12" />
             </div>
           </div>
         </div>

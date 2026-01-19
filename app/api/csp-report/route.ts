@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { sendNotification } from "@/lib/notifications/service"
 import crypto from "crypto"
 
 interface CSPViolationReport {
@@ -118,11 +119,20 @@ export async function POST(req: NextRequest) {
     })
 
     // Update or create violation pattern
+    let isNewPattern = false;
     if (violation.violatedDirective && violation.blockedUri) {
       const patternHash = crypto
         .createHash("sha256")
         .update(`${violation.violatedDirective}:${violation.blockedUri}`)
         .digest("hex")
+
+      const existingPattern = await prisma.violationPattern.findUnique({
+        where: { patternHash },
+      });
+
+      if (!existingPattern) {
+        isNewPattern = true;
+      }
 
       await prisma.violationPattern.upsert({
         where: { patternHash },
@@ -142,6 +152,31 @@ export async function POST(req: NextRequest) {
           severity: violation.severity || undefined,
         },
       })
+    }
+
+    // Send notification if domain exists and this is a new pattern or first occurrence
+    if (domain && (isNewPattern || violation.violationCount === 1)) {
+      try {
+        await sendNotification({
+          type: 'violation',
+          teamId: domain.teamId,
+          domainId: domain.id,
+          domainName: domain.name || domain.url,
+          title: 'New CSP Violation Detected',
+          message: `A new CSP violation was detected on ${domain.name || domain.url}.\n\nViolated Directive: ${violation.violatedDirective || 'Unknown'}\nBlocked URI: ${violation.blockedUri || 'N/A'}\nSeverity: ${violation.severity || 'Unknown'}`,
+          severity: violation.severity || 'medium',
+          metadata: {
+            violationId: violation.id,
+            documentUri: violation.documentUri,
+            sourceFile: violation.sourceFile,
+            lineNumber: violation.lineNumber,
+            columnNumber: violation.columnNumber,
+          },
+        });
+      } catch (notifError) {
+        // Don't fail the request if notification fails
+        console.error('[CSP Report] Failed to send notification:', notifError);
+      }
     }
 
     // Return 204 No Content (standard for violation reporting)

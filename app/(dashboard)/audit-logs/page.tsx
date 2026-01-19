@@ -1,3 +1,7 @@
+'use client';
+
+import { Download, FileSpreadsheet, Calendar, Filter, ExternalLink, ChevronLeft, ChevronRight, Bot, Lock, Clock } from 'lucide-react';
+
 export default function AuditLogsPage() {
   return (
     <div className="min-h-full bg-[#0f2023] text-white px-8 py-8">
@@ -15,11 +19,11 @@ export default function AuditLogsPage() {
           </div>
           <div className="flex gap-3">
             <button className="flex items-center gap-2 rounded-xl bg-[#224349] text-white px-4 py-2 text-xs md:text-sm font-bold hover:bg-[#306069] transition-colors">
-              <span className="material-symbols-outlined text-sm">download</span>
+              <Download className="h-4 w-4" />
               <span>Export JSON</span>
             </button>
             <button className="flex items-center gap-2 rounded-xl bg-[#07b6d5] text-[#0f2023] px-4 py-2 text-xs md:text-sm font-bold hover:brightness-110 transition-colors">
-              <span className="material-symbols-outlined text-sm">csv</span>
+              <FileSpreadsheet className="h-4 w-4" />
               <span>Export CSV</span>
             </button>
           </div>
@@ -49,13 +53,11 @@ export default function AuditLogsPage() {
           <div className="p-4 flex flex-wrap justify-between items-center gap-4 bg-[#102023]/70">
             <div className="flex flex-wrap gap-3">
               <button className="flex items-center gap-2 px-3 py-2 bg-[#224349] text-[#8fc3cc] rounded-lg text-sm border border-transparent hover:border-[#306069]">
-                <span className="material-symbols-outlined text-lg">
-                  calendar_today
-                </span>
+                <Calendar className="h-4 w-4" />
                 <span>Oct 24, 2023 - Oct 31, 2023</span>
               </button>
               <button className="flex items-center gap-2 px-3 py-2 bg-[#224349] text-[#8fc3cc] rounded-lg text-sm border border-transparent hover:border-[#306069]">
-                <span className="material-symbols-outlined text-lg">filter_alt</span>
+                <Filter className="h-4 w-4" />
                 <span>All Statuses</span>
               </button>
             </div>
@@ -107,7 +109,7 @@ export default function AuditLogsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
-                      <span className="material-symbols-outlined">open_in_new</span>
+                      <ExternalLink className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -138,7 +140,7 @@ export default function AuditLogsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
-                      <span className="material-symbols-outlined">open_in_new</span>
+                      <ExternalLink className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -156,9 +158,7 @@ export default function AuditLogsPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <div className="h-6 w-6 rounded-full bg-[#07b6d5]/20 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[14px] text-[#07b6d5]">
-                          robot_2
-                        </span>
+                        <Bot className="h-3.5 w-3.5 text-[#07b6d5]" />
                       </div>
                       <span className="text-white">system_worker_04</span>
                     </div>
@@ -173,7 +173,7 @@ export default function AuditLogsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
-                      <span className="material-symbols-outlined">open_in_new</span>
+                      <ExternalLink className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -204,7 +204,7 @@ export default function AuditLogsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
-                      <span className="material-symbols-outlined">open_in_new</span>
+                      <ExternalLink className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -237,7 +237,7 @@ export default function AuditLogsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
-                      <span className="material-symbols-outlined">open_in_new</span>
+                      <ExternalLink className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -252,7 +252,7 @@ export default function AuditLogsPage() {
                 className="h-10 w-10 flex items-center justify-center rounded-lg bg-[#224349] text-white hover:bg-[#07b6d5] transition-colors disabled:opacity-50"
                 disabled
               >
-                <span className="material-symbols-outlined">chevron_left</span>
+                <ChevronLeft className="h-5 w-5" />
               </button>
               <button className="h-10 w-10 flex items-center justify-center rounded-lg bg-[#07b6d5] text-[#0f2023] font-bold">
                 1
@@ -268,7 +268,7 @@ export default function AuditLogsPage() {
                 86
               </button>
               <button className="h-10 w-10 flex items-center justify-center rounded-lg bg-[#224349] text-white hover:bg-[#07b6d5] transition-colors">
-                <span className="material-symbols-outlined">chevron_right</span>
+                <ChevronRight className="h-5 w-5" />
               </button>
             </div>
             <div className="flex items-center gap-3">
@@ -288,11 +288,11 @@ export default function AuditLogsPage() {
         <div className="flex flex-wrap justify-between items-center text-[#8fc3cc] text-xs px-1 gap-3">
           <div className="flex flex-wrap gap-6">
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">lock</span>
+              <Lock className="h-3.5 w-3.5" />
               SOC2 Compliant Storage
             </span>
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">update</span>
+              <Clock className="h-3.5 w-3.5" />
               Retention: 365 Days
             </span>
           </div>
