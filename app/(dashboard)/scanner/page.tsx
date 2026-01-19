@@ -2,18 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Link2, Zap, Bookmark, Download, Eye, ChevronDown, Lock } from 'lucide-react';
+import { Link2, Zap, Bookmark, Download, Eye, ChevronDown, Lock, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface Domain {
   id: string
   url: string
   name: string | null
+}
+
+interface SecurityScore {
+  headerName: string
+  isPresent: boolean
+  score: number | null
+  grade: string | null
 }
 
 interface ScanResult {
@@ -22,6 +30,9 @@ interface ScanResult {
   overallScore: number | null
   status: string
   scannedAt: Date | string | null
+  securityScores?: SecurityScore[]
+  rawHeaders?: Record<string, any>
+  headersDetected?: Record<string, any>
 }
 
 export default function ScannerPage() {
@@ -35,6 +46,17 @@ export default function ScannerPage() {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRawHeaders, setShowRawHeaders] = useState(false);
+  const [copied, setCopied] = useState(false);
+  
+  // Calculate real header counts - only when scan is complete
+  const passedHeaders = scanComplete && scanResult?.securityScores 
+    ? scanResult.securityScores.filter(s => s.isPresent).length 
+    : null;
+  const missingHeaders = scanComplete && scanResult?.securityScores 
+    ? scanResult.securityScores.filter(s => !s.isPresent).length 
+    : null;
+  const rawHeaders = scanResult?.rawHeaders || scanResult?.headersDetected || {};
 
   useEffect(() => {
     async function fetchDomains() {
@@ -82,9 +104,15 @@ export default function ScannerPage() {
         return;
       }
 
-      addLog(new Date().toLocaleTimeString(), 'INFO', 'Initializing security audit engine...');
-      addLog(new Date().toLocaleTimeString(), 'INFO', `Target domain: ${matchingDomain.url}`);
-      addLog(new Date().toLocaleTimeString(), 'INFO', 'Starting scan...');
+      const timestamp = () => new Date().toLocaleTimeString();
+      
+      addLog(timestamp(), 'INFO', 'Initializing security audit engine...');
+      addLog(timestamp(), 'INFO', `Target domain: ${matchingDomain.url}`);
+      addLog(timestamp(), 'INFO', 'Connecting to target server...');
+      
+      // Simulate connection delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      addLog(timestamp(), 'INFO', 'Connection established. Fetching HTTP headers...');
 
       const res = await fetch('/api/scans', {
         method: 'POST',
@@ -101,10 +129,34 @@ export default function ScannerPage() {
         throw new Error(errorData.error || 'Scan failed');
       }
 
+      // Simulate analysis delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      addLog(timestamp(), 'ANALYZE', 'Analyzing security headers...');
+      
       const data = await res.json();
       const scan = data.scan;
 
-      addLog(new Date().toLocaleTimeString(), 'SUCCESS', 'Scan completed successfully');
+      // Enhanced console logs
+      await new Promise(resolve => setTimeout(resolve, 600));
+      addLog(timestamp(), 'ANALYZE', `Found ${scan.securityScores?.length || 0} security headers to evaluate`);
+      
+      const presentCount = scan.securityScores?.filter((s: SecurityScore) => s.isPresent).length || 0;
+      const missingCount = scan.securityScores?.filter((s: SecurityScore) => !s.isPresent).length || 0;
+      
+      if (presentCount > 0) {
+        addLog(timestamp(), 'INFO', `${presentCount} security headers detected and validated`);
+      }
+      if (missingCount > 0) {
+        addLog(timestamp(), 'WARNING', `${missingCount} critical security headers are missing`);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 400));
+      addLog(timestamp(), 'ANALYZE', `Calculating overall security score: ${scan.overallScore || 0}/100`);
+      addLog(timestamp(), 'ANALYZE', `Security grade: ${scan.overallGrade || 'N/A'}`);
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      addLog(timestamp(), 'SUCCESS', 'Scan completed successfully');
+      addLog(timestamp(), 'INFO', 'Results ready for review');
       
       setScanResult(scan);
       setGrade(scan.overallGrade || null);
@@ -321,7 +373,9 @@ export default function ScannerPage() {
                       <div className="h-2 w-2 rounded-full bg-green-400"></div>
                       <span className="text-sm font-semibold text-green-400">PASSED</span>
                     </div>
-                    <p className="text-2xl font-bold">12</p>
+                    <p className="text-2xl font-bold">
+                      {passedHeaders !== null ? passedHeaders : '—'}
+                    </p>
                     <p className="text-xs text-gray-400">Headers</p>
                   </div>
                   <div className="bg-red-500/10 border border-red-500/40 rounded-lg p-4">
@@ -329,7 +383,9 @@ export default function ScannerPage() {
                       <div className="h-2 w-2 rounded-full bg-red-400"></div>
                       <span className="text-sm font-semibold text-red-400">MISSING</span>
                     </div>
-                    <p className="text-2xl font-bold">3</p>
+                    <p className="text-2xl font-bold">
+                      {missingHeaders !== null ? missingHeaders : '—'}
+                    </p>
                     <p className="text-xs text-gray-400">Vital</p>
                   </div>
                 </div>
@@ -340,7 +396,12 @@ export default function ScannerPage() {
                     <Download className="mr-2 h-4 w-4" />
                     DOWNLOAD REPORT
                   </Button>
-                  <Button variant="outline" className="flex-1 border-[#224349] bg-[#224349] text-[#8fc3cc] hover:bg-[#2b545c]">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 border-[#224349] bg-[#224349] text-[#8fc3cc] hover:bg-[#2b545c]"
+                    onClick={() => setShowRawHeaders(true)}
+                    disabled={!scanResult || Object.keys(rawHeaders).length === 0}
+                  >
                     <Eye className="mr-2 h-4 w-4" />
                     VIEW RAW HEADERS
                   </Button>
@@ -369,6 +430,57 @@ export default function ScannerPage() {
             </Card>
           </div>
         </div>
+
+        {/* Raw Headers Dialog */}
+        <Dialog open={showRawHeaders} onOpenChange={setShowRawHeaders}>
+          <DialogContent className="max-w-4xl max-h-[80vh] bg-[#162a2e] border-[#224349] text-white">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">Raw HTTP Headers</DialogTitle>
+              <DialogDescription className="text-[#8fc3cc]">
+                Complete HTTP response headers from the scan
+              </DialogDescription>
+            </DialogHeader>
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="sm"
+                className="absolute top-2 right-2 z-10 bg-[#224349] border-[#224349] text-[#8fc3cc] hover:bg-[#2b545c]"
+                onClick={() => {
+                  const headersText = JSON.stringify(rawHeaders, null, 2);
+                  navigator.clipboard.writeText(headersText);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+              >
+                {copied ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy
+                  </>
+                )}
+              </Button>
+              <div className="mt-4 p-4 bg-[#0f2023] rounded-lg border border-[#224349] overflow-auto max-h-[60vh]">
+                <pre className="text-sm font-mono text-[#8fc3cc] whitespace-pre-wrap">
+                  {Object.keys(rawHeaders).length > 0 ? (
+                    Object.entries(rawHeaders).map(([key, value]) => (
+                      <div key={key} className="mb-2">
+                        <span className="text-[#07b6d5] font-semibold">{key}:</span>{' '}
+                        <span className="text-white">{String(value)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-gray-500">No headers available</div>
+                  )}
+                </pre>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
     </div>
   );
 }

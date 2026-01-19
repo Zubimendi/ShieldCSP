@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Shield, Mail, Lock, ArrowRight, Github } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,8 +31,20 @@ export default function LoginPage() {
       });
 
       if (result?.ok) {
-        router.push('/dashboard');
-        router.refresh();
+        // Wait for session to be established before redirecting
+        // This is important in production where cookies need time to be set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verify session is available
+        const session = await getSession();
+        if (session) {
+          // Use window.location for a full page reload to ensure cookies are read
+          window.location.href = '/dashboard';
+        } else {
+          // Fallback: try router if session check fails
+          router.push('/dashboard');
+          router.refresh();
+        }
       } else {
         // Provide user-friendly error messages
         const errorMessage = result?.error || 'Invalid email or password';
