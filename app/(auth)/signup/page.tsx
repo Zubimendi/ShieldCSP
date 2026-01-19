@@ -244,7 +244,7 @@ export default function SignupPage() {
 
             <div className="mt-8 flex items-center gap-4 text-sm text-slate-500">
               <div className="h-px flex-1 bg-slate-800" />
-              <span>Securely certified by</span>
+              <span>Built for security professionals</span>
               <div className="h-px flex-1 bg-slate-800" />
             </div>
 
@@ -253,19 +253,13 @@ export default function SignupPage() {
                 <div className="h-6 w-6 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold">
                   OW
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter">OWASP Member</span>
+                <span className="text-[10px] font-black uppercase tracking-tighter">OWASP Aligned</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="h-6 w-6 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold">
-                  G
+                  OS
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter">GDPR Compliant</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-6 w-6 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold">
-                  S2
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter">SOC2 Type II</span>
+                <span className="text-[10px] font-black uppercase tracking-tighter">Open Source</span>
               </div>
             </div>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { withCache, cacheKeys, invalidateDashboardCache } from "@/lib/cache"
+import { handleApiError } from "@/lib/errors"
 
 // GET /api/dashboard/summary
 // Aggregated metrics for the main dashboard (security posture)
@@ -114,11 +115,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(cached)
   } catch (error) {
-    console.error("[GET /api/dashboard/summary]", error)
-    return NextResponse.json(
-      { error: "Failed to load dashboard summary" },
-      { status: 500 },
-    )
+    return handleApiError(error, {
+      endpoint: '/api/dashboard/summary',
+      method: 'GET',
+      req,
+    })
   }
 }
 

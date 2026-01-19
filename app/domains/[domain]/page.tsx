@@ -1,150 +1,199 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState, use } from 'react';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { 
   Shield, 
   Download, 
   RefreshCw,
+  Bell,
+  Search,
+  User,
   LayoutDashboard,
   Eye,
   AlertTriangle,
-  Settings,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Code,
-  Equal,
-  Bell,
-  Search,
-  User
+  Settings
 } from 'lucide-react';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 
-// Security header scores data
-const securityScores = [
-  {
-    title: 'CSP Strength',
-    status: 'STRONG',
-    statusColor: 'text-green-400',
-    icon: CheckCircle2,
-    iconColor: 'text-green-400',
-    description: 'Comprehensive script and style source definitions found.',
-    progress: 95,
-    progressColor: 'bg-green-500',
-  },
-  {
-    title: 'HSTS Status',
-    status: 'ACTIVE',
-    statusColor: 'text-green-400',
-    icon: CheckCircle2,
-    iconColor: 'text-green-400',
-    value: 'max-age=63072000; includeSubDomains; preload',
-    progress: 100,
-    progressColor: 'bg-green-500',
-  },
-  {
-    title: 'XSS Protection',
-    status: 'DEPRECATED',
-    statusColor: 'text-orange-400',
-    icon: AlertCircle,
-    iconColor: 'text-orange-400',
-    description: 'Consider modern CSP alternative: Trusted Types.',
-    progress: 60,
-    progressColor: 'bg-orange-500',
-  },
-  {
-    title: 'Cookie Security',
-    status: 'SECURE',
-    statusColor: 'text-green-400',
-    icon: CheckCircle2,
-    iconColor: 'text-green-400',
-    value: 'SameSite=Lax; Secure; HttpOnly flags present.',
-    progress: 100,
-    progressColor: 'bg-green-500',
-  },
-];
+interface SecurityScoreEntry {
+  headerName: string;
+  score: number | null;
+  grade: string | null;
+  isPresent: boolean;
+}
 
-// Header analysis data
-const headerAnalysis = [
-  {
-    header: 'Content-Security-Policy',
-    status: 'active',
-    statusIcon: CheckCircle2,
-    statusColor: 'text-green-400',
-    description: 'Policy is active and enforcing script restrictions.',
-    expanded: true,
-    issue: {
-      found: true,
-      text: "Presence of 'unsafe-inline' in script-src directive allowing potential XSS.",
-      highlight: "'unsafe-inline'",
-    },
-    recommendation: 'Move inline scripts to external files or use a nonce-based policy to maintain security.',
-    suggestedFix: "script-src 'self' https://apis.google.com 'nonce-EDNkd0Lrq7e'",
-  },
-  {
-    header: 'Strict-Transport-Security',
-    status: 'warning',
-    statusIcon: AlertCircle,
-    statusColor: 'text-orange-400',
-    description: 'HSTS is active but missing recommended preload flag.',
-    expanded: false,
-  },
-  {
-    header: 'X-Content-Type-Options',
-    status: 'active',
-    statusIcon: CheckCircle2,
-    statusColor: 'text-green-400',
-    description: "Successfully set to 'nosniff' to prevent MIME-sniffing.",
-    expanded: false,
-  },
-];
+interface DomainDetail {
+  id: string;
+  url: string;
+  name: string | null;
+  lastScannedAt: string | null;
+  latestScan: {
+    id: string;
+    overallGrade: string | null;
+    overallScore: number | null;
+    scannedAt: string | null;
+    status: string;
+    securityScores: SecurityScoreEntry[];
+  } | null;
+}
 
-// Recent activity data
-const recentActivity = [
-  {
-    type: 'success',
-    icon: CheckCircle2,
-    time: '14:20 PM',
-    message: 'Auto-scan completed - No new issues',
-  },
-  {
-    type: 'warning',
-    icon: AlertCircle,
-    time: '09:15 AM',
-    message: 'Policy update detected - script-src modified',
-  },
-  {
-    type: 'error',
-    icon: AlertTriangle,
-    time: 'Yesterday',
-    message: 'High violation spike - 42 blocked scripts',
-  },
-];
-
-// 30-day score trend data
-const scoreTrend = [
-  { date: 'MAY 1', score: 82 },
-  { date: 'MAY 5', score: 84 },
-  { date: 'MAY 10', score: 85 },
-  { date: 'MAY 15', score: 87 },
-  { date: 'MAY 20', score: 88 },
-  { date: 'MAY 25', score: 90 },
-  { date: 'MAY 30', score: 92 },
-];
-
-export default function DomainAnalysisPage({ params }: { params: { domain: string } }) {
+export default function DomainAnalysisPage({ params }: { params: Promise<{ domain: string }> }) {
+  const { domain: domainId } = use(params);
   const [activeTab, setActiveTab] = useState('overview');
-  const domain = decodeURIComponent(params.domain);
+  const [domainData, setDomainData] = useState<DomainDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    async function fetchDomain() {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/domains/${domainId}`);
+        if (!res.ok) {
+          if (res.status === 404) {
+            throw new Error('Domain not found');
+          }
+          throw new Error('Failed to load domain data');
+        }
+        const data = await res.json();
+        const domain = data.domain;
+        
+        const detail: DomainDetail = {
+          id: domain.id,
+          url: domain.url,
+          name: domain.name,
+          lastScannedAt: domain.latestScan?.scannedAt || null,
+          latestScan: domain.latestScan
+            ? {
+                id: domain.latestScan.id,
+                overallGrade: domain.latestScan.overallGrade,
+                overallScore: domain.latestScan.overallScore,
+                scannedAt: domain.latestScan.scannedAt,
+                status: domain.latestScan.status,
+                securityScores: (domain.latestScan.securityScores || []).map((s: SecurityScoreEntry) => ({
+                  headerName: s.headerName,
+                  score: s.score,
+                  grade: s.grade,
+                  isPresent: s.isPresent,
+                })),
+              }
+            : null,
+        };
+        setDomainData(detail);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load domain');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchDomain();
+  }, [domainId]);
+
+  const latestScan = domainData?.latestScan || null;
+  const grade = latestScan?.overallGrade || '?';
+  const score = latestScan?.overallScore ?? null;
+  const displayName = domainData?.name || domainData?.url || 'Unknown domain';
+  const lastScannedText = latestScan?.scannedAt
+    ? new Date(latestScan.scannedAt).toLocaleString()
+    : 'Never scanned';
+
+  const handleTriggerScan = async () => {
+    if (!domainData) return;
+    try {
+      setLoading(true);
+      const res = await fetch('/api/scans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domainId: domainData.id, scanType: 'full', async: false }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to start scan');
+      }
+      // Refresh domain data
+      const domainRes = await fetch(`/api/domains/${domainId}`);
+      if (domainRes.ok) {
+        const domainData = await domainRes.json();
+        const domain = domainData.domain;
+        setDomainData({
+          id: domain.id,
+          url: domain.url,
+          name: domain.name,
+          lastScannedAt: domain.latestScan?.scannedAt || null,
+          latestScan: domain.latestScan
+            ? {
+                id: domain.latestScan.id,
+                overallGrade: domain.latestScan.overallGrade,
+                overallScore: domain.latestScan.overallScore,
+                scannedAt: domain.latestScan.scannedAt,
+                status: domain.latestScan.status,
+                securityScores: (domain.latestScan.securityScores || []).map((s: SecurityScoreEntry) => ({
+                  headerName: s.headerName,
+                  score: s.score,
+                  grade: s.grade,
+                  isPresent: s.isPresent,
+                })),
+              }
+            : null,
+        });
+      }
+    } catch (err) {
+      console.error('[Domain] Failed to trigger scan', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportReport = async () => {
+    if (!domainData) return;
+    try {
+      const res = await fetch(`/api/domains/${domainId}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch domain report');
+      }
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${displayName.replace(/[^a-z0-9]+/gi, '-')}-report.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[Domain] Failed to export report', err);
+    }
+  };
+
+  if (loading && !domainData) {
+    return (
+      <div className="min-h-screen bg-[#0f2023] text-white flex items-center justify-center">
+        <span className="text-gray-400">Loading domain…</span>
+      </div>
+    );
+  }
+
+  if (error || !domainData) {
+    return (
+      <div className="min-h-screen bg-[#0f2023] text-white flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold">Domain not found</h1>
+          <p className="text-gray-400">{error || 'The requested domain could not be found.'}</p>
+          <Button
+            onClick={() => router.push('/domains')}
+            className="bg-[#07b6d5] hover:brightness-110 text-[#102023] font-semibold"
+          >
+            Back to Domains
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f2023] text-white">
@@ -175,12 +224,9 @@ export default function DomainAnalysisPage({ params }: { params: { domain: strin
                   className="w-64 bg-white/5 border border-white/10 rounded-lg px-10 py-2 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
                 />
               </div>
-              <div className="relative">
-                <Bell className="h-5 w-5 text-gray-400" />
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
-                  2
-                </span>
-              </div>
+              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-white/5">
+                <Bell className="h-5 w-5" />
+              </Button>
               <div className="h-8 w-8 rounded-full bg-[#14b8a6] flex items-center justify-center">
                 <User className="h-4 w-4 text-white" />
               </div>
@@ -196,30 +242,36 @@ export default function DomainAnalysisPage({ params }: { params: { domain: strin
             <div className="flex items-center gap-6">
               <div className="flex flex-col items-center">
                 <div className="h-20 w-20 rounded-full bg-[#07b6d5] flex items-center justify-center">
-                  <span className="text-4xl font-bold text-white">A</span>
+                  <span className="text-4xl font-bold text-white">{grade}</span>
                 </div>
                 <span className="text-xs text-gray-400 mt-2">GRADE</span>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">{domain}</h1>
+                <h1 className="text-3xl font-bold text-white">{displayName}</h1>
                 <div className="flex items-center gap-4 mt-2">
                   <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                    Live Protection Active
+                    {latestScan ? latestScan.status : 'No scans yet'}
                   </Badge>
-                  <span className="text-sm text-gray-400">Last scanned: 2 minutes ago</span>
-                  <span className="text-sm text-gray-400">•</span>
-                  <span className="text-sm text-gray-400">Owner: Security Team A</span>
+                  <span className="text-sm text-gray-400">Last scanned: {lastScannedText}</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" className="border-[#224349] bg-[#224349] text-[#8fc3cc] hover:bg-[#2b545c]">
+              <Button
+                variant="outline"
+                onClick={handleExportReport}
+                className="border-[#224349] bg-[#224349] text-[#8fc3cc] hover:bg-[#2b545c]"
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Export Report
               </Button>
-              <Button className="bg-[#07b6d5] hover:brightness-110 text-[#102023] font-semibold shadow-lg shadow-[#07b6d5]/10">
+              <Button
+                onClick={handleTriggerScan}
+                disabled={loading}
+                className="bg-[#07b6d5] hover:brightness-110 text-[#102023] font-semibold shadow-lg shadow-[#07b6d5]/10"
+              >
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Trigger Manual Scan
+                {loading ? 'Scanning…' : 'Trigger Manual Scan'}
               </Button>
             </div>
           </div>
@@ -233,7 +285,7 @@ export default function DomainAnalysisPage({ params }: { params: { domain: strin
             {[
               { id: 'overview', label: 'Overview', icon: LayoutDashboard },
               { id: 'scans', label: 'Scans', icon: Eye },
-              { id: 'violations', label: 'Violations', icon: AlertTriangle, badge: 12 },
+              { id: 'violations', label: 'Violations', icon: AlertTriangle },
               { id: 'configuration', label: 'Configuration', icon: Settings },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -250,11 +302,6 @@ export default function DomainAnalysisPage({ params }: { params: { domain: strin
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}
-                  {tab.badge && (
-                    <Badge className="bg-red-500/20 text-red-400 border-red-500/30 ml-1">
-                      {tab.badge}
-                    </Badge>
-                  )}
                 </button>
               );
             })}
@@ -265,249 +312,61 @@ export default function DomainAnalysisPage({ params }: { params: { domain: strin
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Main Content */}
+          {/* Left Main Content: simple, honest summary from latest scan */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Security Header Scores */}
-            <div>
-              <h2 className="text-xl font-bold text-white mb-4">Security Header Scores</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {securityScores.map((score, index) => {
-                  const Icon = score.icon;
-                  return (
-                    <Card key={index} className="bg-[#162a2e] border-[#224349]">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h3 className="font-semibold text-white mb-1">{score.title}</h3>
-                            <div className="flex items-center gap-2">
-                              <Icon className={`h-4 w-4 ${score.iconColor}`} />
-                              <span className={`text-sm font-medium ${score.statusColor}`}>
-                                {score.status}
+            <Card className="bg-[#162a2e] border-[#224349]">
+              <CardHeader>
+                <CardTitle className="text-white">Latest Scan Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {latestScan ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-300">
+                      Score:{' '}
+                      <span className="font-semibold text-white">
+                        {score !== null ? `${score}/100` : 'N/A'}
+                      </span>{' '}
+                      ({grade})
+                    </p>
+                    <div className="w-full bg-[#224349] rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-2 bg-[#07b6d5] rounded-full"
+                        style={{ width: `${Math.min(100, Math.max(0, score || 0))}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Scanned at {lastScannedText}
+                    </p>
+                    <div className="mt-4">
+                      <h3 className="text-sm font-semibold text-white mb-2">
+                        Headers analyzed
+                      </h3>
+                      <div className="space-y-2">
+                        {latestScan.securityScores.length === 0 ? (
+                          <p className="text-xs text-gray-400">
+                            No per-header details stored for this scan.
+                          </p>
+                        ) : (
+                          latestScan.securityScores.map((h) => (
+                            <div
+                              key={h.headerName}
+                              className="flex items-center justify-between text-xs text-gray-300"
+                            >
+                              <span>{h.headerName}</span>
+                              <span>
+                                {h.grade || '-'} ({h.score ?? 0})
                               </span>
                             </div>
-                          </div>
-                        </div>
-                        {score.description && (
-                          <p className="text-sm text-gray-400 mb-3">{score.description}</p>
+                          ))
                         )}
-                        {score.value && (
-                          <p className="text-xs text-gray-300 font-mono mb-3 break-all">
-                            {score.value}
-                          </p>
-                        )}
-                        <Progress 
-                          value={score.progress} 
-                          className={`h-2 ${score.progressColor}`}
-                        />
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* CSP Policy Visualization */}
-            <Card className="bg-[#162a2e] border-[#224349]">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Code className="h-5 w-5 text-[#14b8a6]" />
-                    <CardTitle className="text-white">CSP Policy Visualization</CardTitle>
-                  </div>
-                  <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30">
-                    V3 STANDARD
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-[#0d1a1d] rounded-lg p-4 font-mono text-sm overflow-x-auto">
-                  <pre className="text-gray-300">
-                    <span className="text-gray-500">1</span>
-                    <br />
-                    <span className="text-gray-500">2</span> default-src 'self';
-                    <br />
-                    <span className="text-gray-500">3</span> script-src 'self' https://apis.google.com{' '}
-                    <span className="text-red-400 bg-red-500/20 px-1 rounded">'unsafe-inline'</span>;
-                    <br />
-                    <span className="text-gray-500">4</span> style-src 'self' https://fonts.googleapis.com;
-                    <br />
-                    <span className="text-gray-500">5</span> img-src 'self' data:;
-                    <br />
-                    <span className="text-gray-500">6</span> frame-ancestors 'none';
-                  </pre>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Header-by-Header Analysis */}
-            <Card className="bg-[#162a2e] border-[#224349]">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Equal className="h-5 w-5 text-[#14b8a6]" />
-                  <CardTitle className="text-white">Header-by-Header Analysis</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Accordion type="single" collapsible className="w-full" defaultValue="header-0">
-                  {headerAnalysis.map((header, index) => {
-                    const StatusIcon = header.statusIcon;
-                    return (
-                        <AccordionItem
-                        key={index}
-                        value={`header-${index}`}
-                        className="border-white/10"
-                      >
-                        <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center gap-3 flex-1">
-                            <StatusIcon className={`h-5 w-5 ${header.statusColor} flex-shrink-0`} />
-                            <div className="text-left">
-                              <p className="font-semibold text-white">{header.header}</p>
-                              <p className="text-sm text-gray-400">{header.description}</p>
-                            </div>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          {header.issue && (
-                            <div className="space-y-4 pt-4">
-                              <div className="p-4 bg-red-500/10 border border-red-500/40 rounded-lg">
-                                <p className="text-sm font-semibold text-red-400 mb-2">
-                                  ISSUE FOUND:
-                                </p>
-                                <p className="text-sm text-gray-300">
-                                  {header.issue.text.split(header.issue.highlight).map((part, i, arr) => (
-                                    <span key={i}>
-                                      {part}
-                                      {i < arr.length - 1 && (
-                                        <span className="bg-red-500/20 text-red-400 px-1 rounded">
-                                          {header.issue.highlight}
-                                        </span>
-                                      )}
-                                    </span>
-                                  ))}
-                                </p>
-                              </div>
-                              <div className="p-4 bg-blue-500/10 border border-blue-500/40 rounded-lg">
-                                <p className="text-sm font-semibold text-blue-400 mb-2">
-                                  RECOMMENDATION:
-                                </p>
-                                <p className="text-sm text-gray-300">{header.recommendation}</p>
-                              </div>
-                              <div className="p-4 bg-[#0d1a1d] rounded-lg">
-                                <p className="text-sm font-semibold text-[#14b8a6] mb-2">
-                                  Suggested Fix:
-                                </p>
-                                <code className="text-sm text-gray-300 font-mono">
-                                  {header.suggestedFix}
-                                </code>
-                              </div>
-                            </div>
-                          )}
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  })}
-                </Accordion>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Sidebar */}
-          <div className="space-y-6">
-            {/* Real-Time Status */}
-            <Card className="bg-[#162a2e] border-[#224349]">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-[#14b8a6] animate-pulse" />
-                  <CardTitle className="text-white text-sm uppercase tracking-wider">
-                    Real-Time Status
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-gray-400">
-                  Your domain is protected against <span className="text-white font-semibold">98.4%</span> of known injection vectors based on current CSP.
-                </p>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-400">Threat blocks (24h)</span>
-                    <span className="text-2xl font-bold text-white">1,248</span>
-                  </div>
-                  <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-[#14b8a6] rounded-full transition-all"
-                      style={{ width: '85%' }}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card className="bg-[#162a2e] border-[#224349]">
-              <CardHeader>
-                <CardTitle className="text-white text-sm uppercase tracking-wider">
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recentActivity.map((activity, index) => {
-                  const Icon = activity.icon;
-                  const colorClass = 
-                    activity.type === 'success' ? 'text-green-400' :
-                    activity.type === 'warning' ? 'text-orange-400' : 'text-red-400';
-                  return (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className={`h-2 w-2 rounded-full mt-2 ${colorClass.replace('text-', 'bg-')}`} />
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-300">{activity.message}</p>
-                        <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
                       </div>
                     </div>
-                  );
-                })}
-                <Button 
-                  variant="outline" 
-                  className="w-full border-white/10 text-gray-300 hover:bg-white/5 mt-4"
-                >
-                  View All Activities
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* 30-Day Score Trend */}
-            <Card className="bg-[#162a2e] border-[#224349]">
-              <CardHeader>
-                <CardTitle className="text-white text-sm uppercase tracking-wider">
-                  30-Day Score Trend
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={scoreTrend}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#224349" />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="#9ca3af"
-                        tick={{ fill: '#9ca3af', fontSize: 10 }}
-                      />
-                      <YAxis 
-                        stroke="#9ca3af"
-                        tick={{ fill: '#9ca3af', fontSize: 10 }}
-                        domain={[0, 100]}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1a1f3a', 
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '8px'
-                        }}
-                        labelStyle={{ color: '#fff' }}
-                      />
-                      <Bar dataKey="score" fill="#07b6d5" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400">
+                    No scans yet for this domain. Trigger a manual scan to see results.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -519,7 +378,7 @@ export default function DomainAnalysisPage({ params }: { params: { domain: strin
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-400">
-              ShieldCSP Enterprise Edition v2.4
+              ShieldCSP – Open Source Security Headers & CSP Lab
             </div>
             <div className="flex items-center gap-6">
               <a href="/docs" className="text-sm text-gray-400 hover:text-white transition-colors">

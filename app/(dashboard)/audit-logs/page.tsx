@@ -289,7 +289,7 @@ export default function AuditLogsPage() {
           <div className="flex flex-wrap gap-6">
             <span className="flex items-center gap-1">
               <Lock className="h-3.5 w-3.5" />
-              SOC2 Compliant Storage
+              Secure Audit Logging
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />

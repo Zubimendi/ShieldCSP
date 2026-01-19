@@ -5,6 +5,7 @@ import { executeScan } from "@/lib/scanner/scan-executor"
 import { withCache, cacheKeys, invalidateDomainCache, invalidateDashboardCache } from "@/lib/cache"
 import { enqueueScanJob } from "@/lib/queue/job-queue"
 import { isRedisAvailable } from "@/lib/redis"
+import { handleApiError } from "@/lib/errors"
 
 const startScanSchema = z.object({
   domainId: z.string().uuid(),
@@ -52,11 +53,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ scans })
   } catch (error) {
-    console.error("[GET /api/scans]", error)
-    return NextResponse.json(
-      { error: "Failed to load scans" },
-      { status: 500 },
-    )
+    return handleApiError(error, {
+      endpoint: '/api/scans',
+      method: 'GET',
+      req,
+    })
   }
 }
 
@@ -147,19 +148,18 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ scan: completedScan }, { status: 201 })
   } catch (error) {
-    console.error("[POST /api/scans]", error)
-
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request body", details: error.flatten() },
+        { error: "Invalid request. Please check your input.", details: error.flatten() },
         { status: 400 },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to create scan" },
-      { status: 500 },
-    )
+    return handleApiError(error, {
+      endpoint: '/api/scans',
+      method: 'POST',
+      req,
+    })
   }
 }
 

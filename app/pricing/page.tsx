@@ -48,7 +48,7 @@ const featureComparison = [
     feature: 'Security Policy Audits',
     starter: 'Basic',
     pro: 'Full',
-    enterprise: 'Continuous Compliance',
+    enterprise: 'Continuous Monitoring',
   },
   {
     feature: 'Team Seats',

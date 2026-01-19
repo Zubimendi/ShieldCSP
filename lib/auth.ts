@@ -29,28 +29,44 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        })
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          })
 
-        if (!user || !user.passwordHash) {
+          if (!user || !user.passwordHash) {
+            return null
+          }
+
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.passwordHash
+          )
+
+          if (!isValid) {
+            return null
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.avatarUrl || undefined,
+          }
+        } catch (error) {
+          // Log database errors but don't expose them to user
+          const { logError } = await import('@/lib/logger')
+          await logError('Authentication error', error, {
+            endpoint: '/api/auth/[...nextauth]',
+            method: 'POST',
+            metadata: {
+              email: credentials.email,
+            },
+          })
+          
+          // Return null to indicate authentication failure
+          // NextAuth will show a generic error message
           return null
-        }
-
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.passwordHash
-        )
-
-        if (!isValid) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.avatarUrl || undefined,
         }
       },
     }),
@@ -61,7 +77,35 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
     signOut: "/login",
-    error: "/login",
+    error: "/login?error=AuthenticationError",
+  },
+  events: {
+    async signIn({ user, isNewUser }) {
+      // Log successful sign-in
+      try {
+        const { logInfo } = await import('@/lib/logger')
+        await logInfo('User signed in', {
+          endpoint: '/api/auth/[...nextauth]',
+          method: 'POST',
+          userId: user.id,
+          metadata: { isNewUser },
+        })
+      } catch (error) {
+        // Don't fail auth if logging fails
+      }
+    },
+    async signInError({ error }) {
+      // Log authentication errors
+      try {
+        const { logError } = await import('@/lib/logger')
+        await logError('Authentication failed', error, {
+          endpoint: '/api/auth/[...nextauth]',
+          method: 'POST',
+        })
+      } catch (logError) {
+        // Don't fail if logging fails
+      }
+    },
   },
   callbacks: {
     async jwt({ token, user }) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Link2, Zap, Bookmark, Download, Eye, ChevronDown, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,40 +10,113 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
+interface Domain {
+  id: string
+  url: string
+  name: string | null
+}
+
+interface ScanResult {
+  id: string
+  overallGrade: string | null
+  overallScore: number | null
+  status: string
+  scannedAt: Date | string | null
+}
+
 export default function ScannerPage() {
   const [url, setUrl] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
-  const [grade, setGrade] = useState('B+');
-  const [score, setScore] = useState(84);
+  const [grade, setGrade] = useState<string | null>(null);
+  const [score, setScore] = useState<number | null>(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchDomains() {
+      try {
+        const res = await fetch('/api/domains');
+        if (res.ok) {
+          const data = await res.json();
+          setDomains(data.domains || []);
+        }
+      } catch (err) {
+        console.error('[Scanner] Error fetching domains:', err);
+      }
+    }
+    fetchDomains();
+  }, []);
 
   const addLog = (time: string, level: string, message: string) => {
-    setConsoleLogs(prev => [...prev, `[${time}] ${level} ${message}`]);
+    const timestamp = new Date().toLocaleTimeString();
+    setConsoleLogs(prev => [...prev, `[${timestamp}] ${level} ${message}`]);
   };
 
-  const runScan = () => {
+  const runScan = async () => {
     if (!url || scanning) return;
     
     setScanning(true);
     setScanComplete(false);
     setConsoleLogs([]);
-    setGrade('B+');
-    setScore(84);
+    setGrade(null);
+    setScore(null);
+    setScanResult(null);
+    setError(null);
 
-    // Simulate scan progress
-    setTimeout(() => addLog('09:41:22', 'INFO', 'Initializing security audit engine...'), 100);
-    setTimeout(() => addLog('09:41:23', 'INFO', 'Connection established to target host.'), 500);
-    setTimeout(() => addLog('09:41:23', 'INFO', 'Fetching HTTP response headers...'), 800);
-    setTimeout(() => addLog('09:41:24', 'SUCCESS', 'Content-Type: text/html detected.'), 1200);
-    setTimeout(() => addLog('09:41:24', 'SUCCESS', 'X-Frame-Options found: SAMEORIGIN.'), 1500);
-    setTimeout(() => addLog('09:41:25', 'ANALYZE', 'Parsing Content-Security-Policy (CSP)...'), 1800);
-    setTimeout(() => addLog('09:41:25', 'WARNING', "'unsafe-inline' detected in script-src."), 2100);
-    setTimeout(() => addLog('09:41:26', 'INFO', 'Calculating risk score based on CVE-2024-XSS'), 2400);
-    setTimeout(() => {
-      setScanning(false);
+    try {
+      // Find matching domain
+      const matchingDomain = domains.find(d => {
+        const domainUrl = d.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        const inputUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        return domainUrl === inputUrl || domainUrl.includes(inputUrl) || inputUrl.includes(domainUrl);
+      });
+
+      if (!matchingDomain) {
+        setError('Domain not found. Please add the domain first in the Domains page.');
+        addLog(new Date().toLocaleTimeString(), 'ERROR', 'Domain not found in your account. Add it in the Domains page first.');
+        setScanning(false);
+        return;
+      }
+
+      addLog(new Date().toLocaleTimeString(), 'INFO', 'Initializing security audit engine...');
+      addLog(new Date().toLocaleTimeString(), 'INFO', `Target domain: ${matchingDomain.url}`);
+      addLog(new Date().toLocaleTimeString(), 'INFO', 'Starting scan...');
+
+      const res = await fetch('/api/scans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          domainId: matchingDomain.id,
+          scanType: 'full',
+          async: false,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Scan failed');
+      }
+
+      const data = await res.json();
+      const scan = data.scan;
+
+      addLog(new Date().toLocaleTimeString(), 'SUCCESS', 'Scan completed successfully');
+      
+      setScanResult(scan);
+      setGrade(scan.overallGrade || null);
+      setScore(scan.overallScore || null);
       setScanComplete(true);
-    }, 3000);
+    } catch (err: any) {
+      const errorMsg = err.message || 'Failed to run scan';
+      setError(errorMsg);
+      addLog(new Date().toLocaleTimeString(), 'ERROR', errorMsg);
+    } finally {
+      setScanning(false);
+    }
   };
 
   return (
@@ -76,10 +149,38 @@ export default function ScannerPage() {
                 type="url"
                 placeholder="https://example.com"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  setShowSuggestions(true);
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && runScan()}
                 className="pl-12 pr-4 bg-[#102023] border-[#224349] text-white placeholder:text-[#8fc3cc] h-14 text-lg"
               />
+              {/* Domain suggestions based on user's domains */}
+              {showSuggestions && url && domains.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full rounded-md border border-[#224349] bg-[#102023] shadow-lg max-h-60 overflow-y-auto">
+                  {domains
+                    .filter((d) => {
+                      const q = url.replace(/^https?:\/\//, '').toLowerCase();
+                      return d.url.toLowerCase().includes(q) || (d.name || '').toLowerCase().includes(q);
+                    })
+                    .slice(0, 8)
+                    .map((d) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => {
+                          setUrl(d.url);
+                          setShowSuggestions(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-[#183034] flex flex-col"
+                      >
+                        <span className="text-white font-medium">{d.url}</span>
+                        {d.name && <span className="text-xs text-gray-400">{d.name}</span>}
+                      </button>
+                    ))}
+                </div>
+              )}
             </div>
             <Button
               onClick={runScan}
@@ -181,24 +282,34 @@ export default function ScannerPage() {
                           />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-2xl font-bold">{grade}</span>
+                          <span className="text-2xl font-bold">{grade || 'N/A'}</span>
                           <span className="text-xs text-gray-400">GRADE</span>
                         </div>
                       </div>
                       <div>
                         <p className="text-sm text-gray-400 mb-1">SECURITY SCORE:</p>
-                        <p className="text-2xl font-bold">{score}/100</p>
+                        <p className="text-2xl font-bold">{score !== null ? `${score}/100` : 'N/A'}</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium mb-1">Analysis Summary</p>
-                        <p className="text-xs text-gray-400">Scan completed in 4.2 seconds.</p>
+                        <p className="text-xs text-gray-400">
+                          {scanComplete ? 'Scan completed successfully.' : scanning ? 'Scan in progress...' : 'Ready to scan.'}
+                        </p>
+                        {error && (
+                          <p className="text-xs text-red-400 mt-1">{error}</p>
+                        )}
                       </div>
-                      <Button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white">
-                        <Bookmark className="mr-2 h-4 w-4" />
-                        SAVE TO DOMAINS
-                      </Button>
+                      {scanResult && (
+                        <Button 
+                          className="bg-[#14b8a6] hover:bg-[#0d9488] text-white"
+                          onClick={() => window.location.href = `/domains/${domains.find(d => d.url === url)?.id || ''}`}
+                        >
+                          <Bookmark className="mr-2 h-4 w-4" />
+                          VIEW DOMAIN
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

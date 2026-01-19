@@ -1,6 +1,7 @@
-'use client';
-
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,20 +17,82 @@ import {
 } from '@/components/ui/table';
 import {
   Globe,
-  Plus,
   Search,
   ExternalLink,
   CheckCircle2,
   AlertTriangle,
 } from 'lucide-react';
-import { dummyDomains, generateDummyScan } from '@/lib/data/dummy';
 import { format } from 'date-fns';
+import { AddDomainDialog } from '@/components/dashboard/add-domain-dialog';
 
-// Generate scan data for each domain
-const domainsWithScans = dummyDomains.map(domain => ({
-  ...domain,
-  latestScan: generateDummyScan(domain.id, domain.url),
-}));
+interface DomainWithScan {
+  id: string
+  teamId: string
+  url: string
+  name: string | null
+  isActive: boolean
+  scanFrequency: string
+  notifyOnViolations: boolean
+  createdAt: Date | string
+  lastScannedAt: Date | string | null
+  latestScan: {
+    id: string
+    overallGrade: string | null
+    overallScore: number | null
+    scannedAt: Date | string | null
+    status: string
+  } | null
+}
+
+async function getDomains(): Promise<DomainWithScan[]> {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      return []
+    }
+
+    // Get user's teams
+    const userTeams = await prisma.teamMember.findMany({
+      where: { userId: session.user.id },
+      select: { teamId: true },
+    })
+
+    const teamIds = userTeams.map(t => t.teamId)
+
+    if (teamIds.length === 0) {
+      return []
+    }
+
+    const domains = await prisma.domain.findMany({
+      where: { teamId: { in: teamIds } },
+      orderBy: { createdAt: "desc" },
+      include: {
+        scans: {
+          orderBy: { scannedAt: "desc" },
+          take: 1,
+          select: {
+            id: true,
+            overallGrade: true,
+            overallScore: true,
+            scannedAt: true,
+            status: true,
+          },
+        },
+      },
+    })
+
+    // Transform to include latestScan
+    return domains.map((domain) => ({
+      ...domain,
+      latestScan: domain.scans[0] || null,
+      scans: undefined, // Remove scans array
+    })) as DomainWithScan[]
+  } catch (error) {
+    console.error('[Domains] Error fetching data:', error)
+    return []
+  }
+}
 
 const gradeColors: Record<string, string> = {
   'A+': 'bg-green-500 text-white',
@@ -40,7 +103,9 @@ const gradeColors: Record<string, string> = {
   'F': 'bg-red-600 text-white',
 };
 
-export default function DomainsPage() {
+export default async function DomainsPage() {
+  const domainsWithScans: DomainWithScan[] = await getDomains()
+  
   return (
     <div className="min-h-screen bg-[#0f2023] p-8 space-y-8">
       {/* Header */}
@@ -51,10 +116,7 @@ export default function DomainsPage() {
             Manage and monitor your domain security posture
           </p>
         </div>
-        <Button className="bg-[#07b6d5] hover:brightness-110 text-[#102023] font-semibold shadow-lg shadow-[#07b6d5]/10">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Domain
-        </Button>
+        <AddDomainDialog />
       </div>
 
       {/* Search and Filters */}
@@ -93,20 +155,27 @@ export default function DomainsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {domainsWithScans.map((domain) => (
+                {domainsWithScans.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-400">
+                      No domains yet. Click &quot;Add Domain&quot; to get started.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  domainsWithScans.map((domain) => (
                     <TableRow 
                     key={domain.id} 
                     className="border-[#224349] hover:bg-white/5/10 cursor-pointer"
                   >
                     <TableCell>
                       <Link 
-                        href={`/domains/${encodeURIComponent(domain.url)}`}
+                        href={`/domains/${domain.id}`}
                         className="flex items-center gap-2 hover:text-[#07b6d5] transition-colors"
                       >
                         <Globe className="h-4 w-4 text-gray-400" />
                         <div>
                           <p className="text-white font-medium">{domain.url}</p>
-                          <p className="text-sm text-gray-400">{domain.name}</p>
+                          <p className="text-sm text-gray-400">{domain.name || 'N/A'}</p>
                         </div>
                       </Link>
                     </TableCell>
@@ -150,7 +219,7 @@ export default function DomainsPage() {
                       {domain.scanFrequency}
                     </TableCell>
                     <TableCell>
-                      <Link href={`/domains/${encodeURIComponent(domain.url)}`}>
+                      <Link href={`/domains/${domain.id}`}>
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -161,7 +230,8 @@ export default function DomainsPage() {
                       </Link>
                     </TableCell>
                   </TableRow>
-                ))}
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -228,10 +298,13 @@ export default function DomainsPage() {
               <div>
                 <p className="text-sm text-gray-400 mb-1">Avg. Score</p>
                 <p className="text-3xl font-bold text-white">
-                  {Math.round(
-                    domainsWithScans.reduce((sum, d) => sum + (d.latestScan?.overallScore || 0), 0) /
-                    domainsWithScans.length
-                  )}
+                  {domainsWithScans.length === 0 
+                    ? 'N/A'
+                    : Math.round(
+                        domainsWithScans.reduce((sum, d) => sum + (d.latestScan?.overallScore || 0), 0) /
+                        domainsWithScans.length
+                      )
+                  }
                 </p>
               </div>
               <Globe className="h-8 w-8 text-[#14b8a6] opacity-50" />

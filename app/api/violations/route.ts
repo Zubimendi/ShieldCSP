@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { handleApiError } from "@/lib/errors"
 
 // GET /api/violations
 // Returns recent violations with optional filters: ?domainId=&severity=
@@ -16,15 +17,24 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { lastSeenAt: "desc" },
       take: 50,
+      include: {
+        domain: {
+          select: {
+            id: true,
+            url: true,
+            name: true,
+          },
+        },
+      },
     })
 
     return NextResponse.json({ violations })
   } catch (error) {
-    console.error("[GET /api/violations]", error)
-    return NextResponse.json(
-      { error: "Failed to load violations" },
-      { status: 500 },
-    )
+    return handleApiError(error, {
+      endpoint: '/api/violations',
+      method: 'GET',
+      req,
+    })
   }
 }
 

@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { handleApiError } from "@/lib/errors"
 
 const signupSchema = z.object({
   email: z.string().email(),
@@ -77,18 +78,17 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error("[POST /api/auth/signup]", error)
-
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request", details: error.flatten() },
+        { error: "Invalid request. Please check your input.", details: error.flatten() },
         { status: 400 }
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to create account" },
-      { status: 500 }
-    )
+    return handleApiError(error, {
+      endpoint: '/api/auth/signup',
+      method: 'POST',
+      req,
+    })
   }
 }

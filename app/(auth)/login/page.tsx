@@ -34,11 +34,17 @@ export default function LoginPage() {
         router.push('/dashboard');
         router.refresh();
       } else {
-        setError(result?.error || 'Invalid email or password');
+        // Provide user-friendly error messages
+        const errorMessage = result?.error || 'Invalid email or password';
+        if (errorMessage.includes('database') || errorMessage.includes('connection')) {
+          setError('Service temporarily unavailable. Please try again in a moment.');
+        } else {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        }
         setLoading(false);
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   };
@@ -200,17 +206,11 @@ export default function LoginPage() {
         <div className="mt-8 flex items-center justify-center gap-8 text-gray-400">
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
-            <span className="text-xs">ISO 27001</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span className="text-xs">SOC2 TYPE II</span>
+            <span className="text-xs">Open Source</span>
           </div>
           <div className="flex items-center gap-2">
             <Lock className="h-4 w-4" />
-            <span className="text-xs">AES-256</span>
+            <span className="text-xs">Security Focused</span>
           </div>
         </div>
       </div>

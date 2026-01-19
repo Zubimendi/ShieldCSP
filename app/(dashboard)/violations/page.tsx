@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Shield, Bell, User, Filter, Calendar, ArrowLeft, ArrowRight, ArrowRightCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,52 +22,76 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const frequencyRows = Array.from({ length: 3 }).map((_, row) =>
-  Array.from({ length: 32 }).map((__, col) => (row === 1 && col > 8 && col < 24 ? 1 : Math.random() > 0.85 ? 1 : 0)),
-);
-
-const topDirectives = [
-  { directive: 'script-src', count: 4290 },
-  { directive: 'style-src', count: 2105 },
-  { directive: 'frame-ancestors', count: 1080 },
-  { directive: 'img-src', count: 840 },
-];
-
-const recentViolations = [
-  {
-    timestamp: '2023-11-07 14:22:15',
-    domain: 'api.shield.io',
-    directive: 'script-src',
-    severity: 'CRITICAL',
-    status: 'Blocked',
-  },
-  {
-    timestamp: '2023-11-07 14:18:42',
-    domain: 'assets.shield.io',
-    directive: 'img-src',
-    severity: 'HIGH',
-    status: 'Report-only',
-  },
-  {
-    timestamp: '2023-11-07 13:55:01',
-    domain: 'metrics.ext.com',
-    directive: 'connect-src',
-    severity: 'MEDIUM',
-    status: 'Blocked',
-  },
-  {
-    timestamp: '2023-11-07 13:42:10',
-    domain: 'static.shield.io',
-    directive: 'font-src',
-    severity: 'INFO',
-    status: 'Report-only',
-  },
-];
+interface Violation {
+  id: string
+  domainId: string
+  directive: string
+  blockedUri: string | null
+  violatedDirective: string | null
+  severity: string
+  count: number
+  firstSeenAt: Date | string
+  lastSeenAt: Date | string
+  domain: {
+    id: string
+    url: string
+    name: string | null
+  } | null
+}
 
 export default function ViolationsDashboardPage() {
   const [domainFilter, setDomainFilter] = useState('all');
   const [severityFilter, setSeverityFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('30d');
+  const [violations, setViolations] = useState<Violation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchViolations() {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (severityFilter !== 'all') {
+          params.set('severity', severityFilter);
+        }
+        if (domainFilter !== 'all') {
+          params.set('domainId', domainFilter);
+        }
+        
+        const res = await fetch(`/api/violations?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setViolations(data.violations || []);
+        }
+      } catch (error) {
+        console.error('[Violations] Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchViolations();
+  }, [domainFilter, severityFilter, timeRange]);
+
+  // Calculate stats from violations
+  const totalViolations = violations.reduce((sum, v) => sum + v.count, 0);
+  const uniquePatterns = violations.length;
+  const topDirective = violations.reduce((acc, v) => {
+    const dir = v.directive || v.violatedDirective || 'unknown';
+    acc[dir] = (acc[dir] || 0) + v.count;
+    return acc;
+  }, {} as Record<string, number>);
+  const topDirectiveName = Object.entries(topDirective).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+  const topDirectiveCount = topDirective[topDirectiveName] || 0;
+  const blockedXss = violations.filter(v => v.severity === 'critical' || v.severity === 'high').reduce((sum, v) => sum + v.count, 0);
+  
+  // Top directives for chart
+  const topDirectives = Object.entries(topDirective)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([directive, count]) => ({ directive, count }));
+  
+  const maxDirectiveCount = topDirectives[0]?.count || 1;
 
   return (
     <div className="min-h-screen bg-[#0f2023] text-white">
@@ -121,7 +145,7 @@ export default function ViolationsDashboardPage() {
             <CardContent className="p-4">
               <p className="text-xs text-gray-400 mb-1">TOTAL VIOLATIONS</p>
               <div className="flex items-center justify-between">
-                <p className="text-2xl font-bold">12,482</p>
+                <p className="text-2xl font-bold">{loading ? '...' : totalViolations.toLocaleString()}</p>
                 <span className="text-xs text-green-400">+12.4%</span>
               </div>
             </CardContent>
@@ -130,7 +154,7 @@ export default function ViolationsDashboardPage() {
             <CardContent className="p-4">
               <p className="text-xs text-gray-400 mb-1">UNIQUE PATTERNS</p>
               <div className="flex items-center justify-between">
-                <p className="text-2xl font-bold">156</p>
+                <p className="text-2xl font-bold">{loading ? '...' : uniquePatterns}</p>
                 <span className="text-xs text-green-400">+2.1%</span>
               </div>
             </CardContent>
@@ -139,7 +163,7 @@ export default function ViolationsDashboardPage() {
             <CardContent className="p-4">
               <p className="text-xs text-gray-400 mb-1">TOP DIRECTIVE</p>
               <div className="flex items-center justify-between">
-                <p className="text-lg font-bold text-[#14b8a6]">script-src</p>
+                <p className="text-lg font-bold text-[#14b8a6]">{loading ? '...' : topDirectiveName}</p>
                 <span className="text-xs text-red-400">-5.0%</span>
               </div>
             </CardContent>
@@ -148,7 +172,7 @@ export default function ViolationsDashboardPage() {
             <CardContent className="p-4">
               <p className="text-xs text-gray-400 mb-1">BLOCKED XSS</p>
               <div className="flex items-center justify-between">
-                <p className="text-2xl font-bold">842</p>
+                <p className="text-2xl font-bold">{loading ? '...' : blockedXss.toLocaleString()}</p>
                 <span className="text-xs text-green-400">+8.7%</span>
               </div>
             </CardContent>
@@ -239,7 +263,7 @@ export default function ViolationsDashboardPage() {
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-[#14b8a6] rounded-full"
-                      style={{ width: `${(item.count / 4290) * 100}%` }}
+                      style={{ width: `${(item.count / maxDirectiveCount) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -324,48 +348,64 @@ export default function ViolationsDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recentViolations.map((v) => (
-                    <TableRow key={v.timestamp} className="border-white/10 hover:bg.white/5">
-                      <TableCell className="text-xs text-gray-300">{v.timestamp}</TableCell>
-                      <TableCell className="text-xs text-gray-300">{v.domain}</TableCell>
-                      <TableCell className="text-xs text-[#14b8a6] font-medium">{v.directive}</TableCell>
-                      <TableCell className="text-xs">
-                        <Badge
-                          className={`text-xs ${
-                            v.severity === 'CRITICAL'
-                              ? 'bg-red-600/30 text-red-400 border-red-500/40'
-                              : v.severity === 'HIGH'
-                              ? 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                              : v.severity === 'MEDIUM'
-                              ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40'
-                              : 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                          }`}
-                        >
-                          {v.severity}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        <span
-                          className={`inline-flex items-center gap-1 ${
-                            v.status === 'Blocked' ? 'text-red-400' : 'text-gray-300'
-                          }`}
-                        >
-                          <span className="h-2 w-2 rounded-full bg-red-500" />
-                          {v.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-xs text-right text-gray-400">
-                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-white/5">
-                          ···
-                        </Button>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-gray-400 py-8">
+                        Loading violations...
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : violations.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-gray-400 py-8">
+                        No violations found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    violations.slice(0, 10).map((v) => {
+                      const timestamp = new Date(v.lastSeenAt).toLocaleString();
+                      const directive = v.directive || v.violatedDirective || 'unknown';
+                      const severity = v.severity.toUpperCase();
+                      
+                      return (
+                        <TableRow key={v.id} className="border-white/10 hover:bg.white/5">
+                          <TableCell className="text-xs text-gray-300">{timestamp}</TableCell>
+                          <TableCell className="text-xs text-gray-300">{v.domain?.url || 'Unknown'}</TableCell>
+                          <TableCell className="text-xs text-[#14b8a6] font-medium">{directive}</TableCell>
+                          <TableCell className="text-xs">
+                            <Badge
+                              className={`text-xs ${
+                                severity === 'CRITICAL'
+                                  ? 'bg-red-600/30 text-red-400 border-red-500/40'
+                                  : severity === 'HIGH'
+                                  ? 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                  : severity === 'MEDIUM'
+                                  ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40'
+                                  : 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                              }`}
+                            >
+                              {severity}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            <span className="inline-flex items-center gap-1 text-gray-300">
+                              <span className="h-2 w-2 rounded-full bg-red-500" />
+                              Blocked ({v.count}x)
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-xs text-right text-gray-400">
+                            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-white/5">
+                              ···
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </div>
             <div className="flex items-center justify-between mt-4 text-xs text-gray-400">
-              <span>SHOWING 1-10 OF 12,482</span>
+              <span>SHOWING 1-{Math.min(10, violations.length)} OF {totalViolations.toLocaleString()}</span>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-white/5">
                   <ArrowLeft className="h-4 w-4" />
