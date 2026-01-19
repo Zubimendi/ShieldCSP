@@ -71,13 +71,13 @@ export default function XssLabPage() {
             <Link href="/dashboard" className="text-[#8fc3cc] hover:text-white transition-colors text-sm font-medium">
               Dashboard
             </Link>
-            <Link href="#" className="text-[#8fc3cc] hover:text-white transition-colors text-sm font-medium">
+            <Link href="/policies" className="text-[#8fc3cc] hover:text-white transition-colors text-sm font-medium">
               Policies
             </Link>
             <Link href="/xss-lab" className="text-white text-sm font-medium border-b-2 border-[#07b6d5] pb-1">
               Lab
             </Link>
-            <Link href="#" className="text-[#8fc3cc] hover:text-white transition-colors text-sm font-medium">
+            <Link href="/violations" className="text-[#8fc3cc] hover:text-white transition-colors text-sm font-medium">
               Reports
             </Link>
           </nav>

@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
 
   // If not authenticated and trying to access protected routes
   if (!isAuthenticated && !isAuthPage) {
-    const protectedPaths = ['/dashboard', '/domains', '/scanner', '/violations', '/codegen', '/xss-lab'];
+    const protectedPaths = ['/dashboard', '/domains', '/scanner', '/violations', '/codegen', '/xss-lab', '/policies'];
     const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path));
     
     if (isProtectedPath) {
@@ -35,5 +35,6 @@ export const config = {
     '/violations/:path*',
     '/codegen/:path*',
     '/xss-lab/:path*',
+    '/policies/:path*',
   ],
 };

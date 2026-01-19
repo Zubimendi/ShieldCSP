@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Globe, Scan, AlertTriangle, FlaskConical, User } from 'lucide-react';
+import { Shield, LayoutDashboard, Globe, Scan, AlertTriangle, ShieldCheck, FlaskConical, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { dummyUser } from '@/lib/data/dummy';
@@ -12,6 +12,7 @@ const navigation = [
   { name: 'Domains', href: '/domains', icon: Globe },
   { name: 'Scans', href: '/scanner', icon: Scan },
   { name: 'Violations', href: '/violations', icon: AlertTriangle },
+  { name: 'Policies', href: '/policies', icon: ShieldCheck },
   { name: 'Lab', href: '/xss-lab', icon: FlaskConical },
 ];
 

@@ -7,8 +7,6 @@ import { Shield, User, Mail, Lock, Eye, EyeOff, TrendingUp, Star } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -21,246 +19,233 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Basic validation
     if (formData.password.length < 12) {
       setError('Password must be at least 12 characters long');
       setLoading(false);
       return;
     }
 
-    // For now, just set auth and redirect (will implement real signup later)
     document.cookie = 'authenticated=true; path=/; max-age=86400';
     document.cookie = `userEmail=${formData.email}; path=/; max-age=86400`;
     document.cookie = `userName=${formData.fullName}; path=/; max-age=86400`;
-    
+
     router.push('/dashboard');
     router.refresh();
   };
 
   return (
-    <div className="min-h-screen bg-[#0f2023] flex text-white">
-      {/* Left Section - Product Information */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-gradient-to-br from-[#0f2023] to-[#162a2e]">
-        <div>
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 mb-16">
-            <div className="h-10 w-10 rounded-full bg-[#07b6d5] flex items-center justify-center">
-              <Shield className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-white">ShieldCSP</span>
-          </Link>
-
-          {/* Headline */}
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold leading-tight mb-4">
-              <span className="text-white">Bulletproof your</span>
-              <br />
-              <span className="text-[#07b6d5]">Content Security</span>
-              <br />
-              <span className="text-[#3b82f6]">Policy.</span>
-            </h1>
+    <div className="min-h-screen bg-[#0f172a] text-slate-100 flex items-center justify-center">
+      <div className="w-full min-h-screen flex flex-col lg:flex-row">
+        {/* Left hero */}
+        <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-slate-950">
+          <div className="absolute top-0 right-0 w-full h-full opacity-20 pointer-events-none">
+            <div className="absolute -top-[10%] -right-[10%] w-96 h-96 bg-[#07b6d5]/20 rounded-full blur-[120px]" />
+            <div className="absolute -bottom-[10%] -left-[10%] w-96 h-96 bg-[#6366f1]/20 rounded-full blur-[120px]" />
           </div>
 
-          {/* Features */}
-          <div className="space-y-8 mb-12">
-            {/* Feature 1 */}
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-lg bg-[#14b8a6]/20 flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="h-6 w-6 text-[#14b8a6]" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-16">
+              <div className="h-10 w-10 bg-[#07b6d5] rounded flex items-center justify-center text-white shadow-lg shadow-[#07b6d5]/20">
+                <Shield className="h-6 w-6" />
               </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  Real-time CSP Monitoring
-                </h3>
-                <p className="text-gray-400">
-                  Detect and block XSS attempts before they reach your users with automated policy generation.
-                </p>
-              </div>
+              <span className="text-2xl font-black tracking-tight">ShieldCSP</span>
             </div>
 
-            {/* Feature 2 */}
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-lg bg-[#14b8a6]/20 flex items-center justify-center flex-shrink-0">
-                <Shield className="h-6 w-6 text-[#14b8a6]" />
+            <div className="max-w-md">
+              <h2 className="text-5xl font-black leading-tight mb-8">
+                Bulletproof your{' '}
+                <span className="bg-gradient-to-br from-[#07b6d5] to-[#6366f1] bg-clip-text text-transparent">
+                  Content Security Policy.
+                </span>
+              </h2>
+
+              <div className="space-y-8">
+                <div className="flex gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0 border border-white/10">
+                    <TrendingUp className="h-5 w-5 text-[#07b6d5]" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg">Real-time CSP Monitoring</h4>
+                    <p className="text-slate-400 text-sm">
+                      Detect and block XSS attempts before they reach your users with automated policy generation.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0 border border-white/10">
+                    <Shield className="h-5 w-5 text-[#6366f1]" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg">XSS Prevention at Scale</h4>
+                    <p className="text-slate-400 text-sm">
+                      Enterprise-grade protection for thousands of domains with zero performance overhead.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  XSS Prevention at Scale
-                </h3>
-                <p className="text-gray-400">
-                  Enterprise-grade protection for thousands of domains with zero performance overhead.
-                </p>
+            </div>
+          </div>
+
+          <div className="relative z-10 mt-auto">
+            <div className="bg-slate-800/70 backdrop-blur-xl border border-white/10 rounded-2xl p-6 max-w-sm">
+              <div className="flex gap-1 mb-4 text-amber-400">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-amber-400" />
+                ))}
+              </div>
+              <p className="italic text-slate-200 mb-4 text-sm leading-relaxed">
+                "ShieldCSP transformed our security posture. We went from manually managing policies to a fully
+                automated, breach-proof system in weeks."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold">
+                  JD
+                </div>
+                <div>
+                  <p className="text-xs font-bold">Jason Draxler</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider">CISO at FinTech Global</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Testimonial */}
-        <div className="bg-[#1a1f3a] rounded-xl p-6 border border-white/10">
-          <div className="flex items-center gap-1 mb-4">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            ))}
-          </div>
-          <p className="text-gray-300 mb-4 italic">
-            "ShieldCSP transformed our security posture. We went from manually managing policies to a fully automated, breach-proof system in weeks."
-          </p>
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 bg-gray-700">
-              <AvatarFallback className="text-white">JD</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-white font-medium">Jason Draxler</p>
-              <p className="text-sm text-gray-400">CISO AT FINTECH GLOBAL</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Section - Sign-up Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          {/* Headline */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">Create Your Account</h2>
-            <p className="text-gray-400">
-              Join 5,000+ security teams protecting their web infrastructure.
-            </p>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <p className="text-sm text-red-400">{error}</p>
-              </div>
-            )}
-
-            {/* Full Name */}
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-xs text-gray-400 uppercase tracking-wider">
-                FULL NAME
-              </Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Alex Rivera"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-12"
-                  required
-                />
-              </div>
+        {/* Right form */}
+        <div className="flex-1 flex flex-col justify-center p-6 sm:p-12 lg:p-24 bg-[#0f172a]">
+          <div className="max-w-md w-full mx-auto">
+            <div className="mb-10 text-center lg:text-left">
+              <h1 className="text-3xl font-black mb-2">Create Your Account</h1>
+              <p className="text-slate-400">Join 5,000+ security teams protecting their web infrastructure.</p>
             </div>
 
-            {/* Work Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs text-gray-400 uppercase tracking-wider">
-                WORK EMAIL
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="alex@company.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-12"
-                  required
-                />
-              </div>
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
+                  {error}
+                </div>
+              )}
 
-            {/* Password */}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-xs text-gray-400 uppercase tracking-wider">
-                PASSWORD
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="pl-10 pr-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-12"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              <div>
+                <Label
+                  htmlFor="fullName"
+                  className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
+                  Full Name
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 h-4 w-4" />
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Alex Rivera"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="w-full bg-[#1e293b] border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm focus:ring-2 focus:ring-[#07b6d5] focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
               </div>
-              <p className="text-xs text-gray-500">
-                Minimum 12 characters, including symbols.
+
+              <div>
+                <Label htmlFor="email" className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
+                  Work Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 h-4 w-4" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="alex@company.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full bg-[#1e293b] border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm focus:ring-2 focus:ring-[#07b6d5] focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="password"
+                  className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2"
+                >
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 h-4 w-4" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full bg-[#1e293b] border-slate-700 rounded-xl py-3 pl-11 pr-12 text-sm focus:ring-2 focus:ring-[#07b6d5] focus:border-transparent outline-none"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="mt-2 text-[11px] text-slate-500">Minimum 12 characters, including symbols.</p>
+              </div>
+
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#07b6d5] hover:bg-[#07b6d5]/90 text-slate-950 font-black py-4 rounded-xl shadow-lg shadow-[#07b6d5]/20 flex items-center justify-center gap-2"
+                >
+                  {loading ? 'Creating Account...' : 'Start Your Free Trial'}
+                  <span className="text-sm">→</span>
+                </Button>
+              </div>
+            </form>
+
+            <div className="mt-8 flex items-center gap-4 text-sm text-slate-500">
+              <div className="h-px flex-1 bg-slate-800" />
+              <span>Securely certified by</span>
+              <div className="h-px flex-1 bg-slate-800" />
+            </div>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-6 opacity-50 hover:opacity-100 transition-all">
+              <div className="flex items-center gap-1.5">
+                <div className="h-6 w-6 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold">
+                  OW
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-tighter">OWASP Member</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-6 w-6 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold">
+                  G
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-tighter">GDPR Compliant</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-6 w-6 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold">
+                  S2
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-tighter">SOC2 Type II</span>
+              </div>
+            </div>
+
+            <div className="mt-12 text-center">
+              <p className="text-sm text-slate-500">
+                Already have an account?{' '}
+                <Link href="/login" className="text-[#07b6d5] font-bold hover:underline">
+                  Sign in
+                </Link>
               </p>
             </div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white h-12 text-base font-semibold"
-            >
-              {loading ? 'Creating Account...' : 'Start Your Free Trial'}
-              <span className="ml-2">→</span>
-            </Button>
-          </form>
-
-          {/* Separator */}
-          <div className="my-6">
-            <Separator className="bg-white/10" />
-          </div>
-
-          {/* Certifications */}
-          <div className="text-center mb-6">
-            <p className="text-xs text-gray-400 mb-4">Securely certified by</p>
-            <div className="flex items-center justify-center gap-6">
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">OW</span>
-                </div>
-                <span className="text-xs text-gray-400">OWASP MEMBER</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-[#14b8a6]" />
-                </div>
-                <span className="text-xs text-gray-400">GDPR COMPLIANT</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                  <span className="text-[8px] font-bold text-white leading-tight">SOC2<br />TYPE II</span>
-                </div>
-                <span className="text-xs text-gray-400">SOC2 TYPE II</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Sign In Link */}
-          <div className="text-center">
-            <p className="text-sm text-gray-400">
-              Already have an account?{' '}
-              <Link href="/login" className="text-[#14b8a6] hover:text-[#0d9488] transition-colors font-medium">
-                Sign in
-              </Link>
-            </p>
           </div>
         </div>
       </div>

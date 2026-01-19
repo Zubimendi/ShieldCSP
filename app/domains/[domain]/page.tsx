@@ -161,9 +161,9 @@ export default function DomainAnalysisPage({ params }: { params: { domain: strin
               </div>
               <nav className="hidden md:flex items-center gap-6">
                 <a href="/dashboard" className="text-[#8fc3cc] font-medium">Dashboard</a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">Inventory</a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">Policies</a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">Reports</a>
+                <a href="/domains" className="text-gray-400 hover:text-white transition-colors">Inventory</a>
+                <a href="/policies" className="text-gray-400 hover:text-white transition-colors">Policies</a>
+                <a href="/violations" className="text-gray-400 hover:text-white transition-colors">Reports</a>
               </nav>
             </div>
             <div className="flex items-center gap-4">
