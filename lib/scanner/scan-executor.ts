@@ -8,6 +8,7 @@ import { analyzeSecurityHeaders, HeaderAnalysisResult } from './header-analyzer'
 import { parseCSP, CSPPolicy } from './csp-parser';
 import { prisma } from '@/lib/prisma';
 import { sendNotification } from '@/lib/notifications/service';
+import { logSecurityEvent } from '@/lib/audit';
 
 export interface ScanResult {
   success: boolean;
@@ -129,6 +130,15 @@ export async function executeScan(
       data: { lastScannedAt: new Date() },
     });
 
+    // Audit log scan completion
+    await logSecurityEvent(domain.teamId, 'score-change', {
+      scanId: scan.id,
+      domainId: domain.id,
+      score: analysis.overallScore,
+      grade: analysis.overallGrade,
+      durationMs: Date.now() - startTime,
+    });
+
     // Send notification if score changed significantly
     if (previousScan && previousScan.overallScore !== null) {
       const scoreDiff = analysis.overallScore - previousScan.overallScore;
@@ -202,11 +212,21 @@ export async function executeScan(
         },
       });
 
-      // Get domain for notification
+      // Get domain for notification and audit log
       const domain = await prisma.domain.findUnique({
         where: { id: domainId },
         select: { id: true, name: true, url: true, teamId: true },
       });
+
+      // Audit log scan failure
+      if (domain) {
+        await logSecurityEvent(domain.teamId, 'scan-failed', {
+          scanId: failedScan.id,
+          domainId: domain.id,
+          error: error.message || 'Unknown error',
+          scanType,
+        });
+      }
 
       // Send scan failure notification
       if (domain) {

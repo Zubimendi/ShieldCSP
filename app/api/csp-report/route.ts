@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sendNotification } from "@/lib/notifications/service"
+import { logSecurityEvent } from "@/lib/audit"
 import crypto from "crypto"
 
 interface CSPViolationReport {
@@ -154,8 +155,18 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Send notification if domain exists and this is a new pattern or first occurrence
+    // Send notification and audit log if domain exists and this is a new pattern or first occurrence
     if (domain && (isNewPattern || violation.violationCount === 1)) {
+      // Audit log security event
+      await logSecurityEvent(domain.teamId, 'violation-detected', {
+        violationId: violation.id,
+        domainId: domain.id,
+        violatedDirective: violation.violatedDirective,
+        blockedUri: violation.blockedUri,
+        severity: violation.severity,
+        documentUri: violation.documentUri,
+      });
+
       try {
         await sendNotification({
           type: 'violation',

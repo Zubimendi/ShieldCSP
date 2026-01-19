@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { slugify } from '@/lib/utils';
+import { createAuditLogFromNextRequest } from '@/lib/audit';
 
 const createTeamSchema = z.object({
   name: z.string().min(1, 'Team name is required').max(100),
@@ -159,6 +160,19 @@ export async function POST(req: NextRequest) {
             members: true,
           },
         },
+      },
+    });
+
+    // Audit log
+    await createAuditLogFromNextRequest(req, {
+      teamId: team.id,
+      userId: session.user.id,
+      action: 'team:create',
+      resourceType: 'team',
+      resourceId: team.id,
+      metadata: {
+        teamName: team.name,
+        plan: team.plan,
       },
     });
 

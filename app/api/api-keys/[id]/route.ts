@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requirePermission } from "@/lib/teams/permissions"
+import { createAuditLogFromNextRequest } from "@/lib/audit"
 
 const updateApiKeySchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -67,6 +68,19 @@ export async function PATCH(
       },
     })
 
+    // Audit log
+    await createAuditLogFromNextRequest(req, {
+      teamId: existing.teamId,
+      userId: session.user.id,
+      action: 'api-key:update',
+      resourceType: 'api-key',
+      resourceId: id,
+      metadata: {
+        keyPrefix: existing.keyPrefix,
+        changes: data,
+      },
+    })
+
     return NextResponse.json({ apiKey: updated }, { status: 200 })
   } catch (error) {
     console.error("[PATCH /api/api-keys/[id]]", error)
@@ -117,6 +131,19 @@ export async function DELETE(
       existing.teamId,
       "api-key:delete",
     )
+
+    // Audit log before deletion
+    await createAuditLogFromNextRequest(req, {
+      teamId: existing.teamId,
+      userId: session.user.id,
+      action: 'api-key:delete',
+      resourceType: 'api-key',
+      resourceId: id,
+      metadata: {
+        keyPrefix: existing.keyPrefix,
+        name: existing.name,
+      },
+    })
 
     await prisma.apiKey.delete({
       where: { id },

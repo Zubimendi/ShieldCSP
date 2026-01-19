@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateApiKey } from "@/lib/api-keys"
 import { requirePermission } from "@/lib/teams/permissions"
+import { createAuditLogFromNextRequest } from "@/lib/audit"
 
 const createApiKeySchema = z.object({
   teamId: z.string().uuid(),
@@ -103,6 +104,21 @@ export async function POST(req: NextRequest) {
       name: data.name,
       scopes: data.scopes,
       expiresAt,
+    })
+
+    // Audit log
+    await createAuditLogFromNextRequest(req, {
+      teamId: data.teamId,
+      userId: session.user.id,
+      action: 'api-key:create',
+      resourceType: 'api-key',
+      resourceId: generated.id,
+      metadata: {
+        keyPrefix: generated.keyPrefix,
+        name: generated.name,
+        scopes: generated.scopes,
+        hasExpiry: !!expiresAt,
+      },
     })
 
     // Return plaintext key only once

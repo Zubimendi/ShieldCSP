@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { requirePermission, isTeamOwner } from '@/lib/teams/permissions';
 import { slugify } from '@/lib/utils';
+import { createAuditLogFromNextRequest } from '@/lib/audit';
 
 const updateTeamSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -239,9 +240,27 @@ export async function DELETE(
       );
     }
 
+    // Get team name before deletion for audit log
+    const team = await prisma.team.findUnique({
+      where: { id: teamId },
+      select: { name: true },
+    });
+
     // Delete team (cascade will handle related records)
     await prisma.team.delete({
       where: { id: teamId },
+    });
+
+    // Audit log (before deletion, teamId still exists in context)
+    await createAuditLogFromNextRequest(req, {
+      teamId,
+      userId: session.user.id,
+      action: 'team:delete',
+      resourceType: 'team',
+      resourceId: teamId,
+      metadata: {
+        teamName: team?.name,
+      },
     });
 
     return NextResponse.json(
