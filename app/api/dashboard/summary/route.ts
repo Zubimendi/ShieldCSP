@@ -2,21 +2,54 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { withCache, cacheKeys, invalidateDashboardCache } from "@/lib/cache"
 import { handleApiError } from "@/lib/errors"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 
 // GET /api/dashboard/summary
 // Aggregated metrics for the main dashboard (security posture)
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const searchParams = req.nextUrl.searchParams
     const teamId = searchParams.get("teamId") || undefined
 
+    // Get user's teams if no specific teamId provided
+    let teamIds: string[] = []
+    if (!teamId) {
+      const userTeams = await prisma.teamMember.findMany({
+        where: { userId: session.user.id },
+        select: { teamId: true },
+      })
+      teamIds = userTeams.map(t => t.teamId)
+      
+      if (teamIds.length === 0) {
+        // User has no teams, return empty data
+        return NextResponse.json({
+          domains: { total: 0 },
+          violations: { last24h: 0 },
+          scans: { today: 0, recent: [] },
+          grades: { distribution: [], latestScore: null },
+          trend: { securityScore: [] },
+        })
+      }
+    }
+
     // Use cache with 5-minute TTL for dashboard data
-    const cacheKey = cacheKeys.dashboardSummary(teamId)
+    const cacheKey = cacheKeys.dashboardSummary(teamId || `user:${session.user.id}`)
     const cached = await withCache(
       cacheKey,
       async () => {
-        // Filter by team if provided (via domains)
-        const domainWhere = teamId ? { teamId } : {}
+        // Filter by team(s) - either specific teamId or user's teams
+        const domainWhere = teamId 
+          ? { teamId } 
+          : teamIds.length > 0 
+            ? { teamId: { in: teamIds } }
+            : { id: 'never-match' } // Empty result if no teams
 
         const [domainCount, activeViolationsCount, scansToday, recentScans] =
           await Promise.all([

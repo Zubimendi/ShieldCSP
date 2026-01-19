@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 import { Shield, LayoutDashboard, Globe, Scan, AlertTriangle, ShieldCheck, FlaskConical, History, LogOut, GroupIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -22,12 +23,55 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const [userRole, setUserRole] = useState<string>('MEMBER');
   
   const user = session?.user || {
     email: 'user@example.com',
     name: 'User',
     image: null,
   };
+
+  useEffect(() => {
+    async function fetchUserRole() {
+      if (!session?.user?.id) return;
+      
+      try {
+        const res = await fetch('/api/teams');
+        if (res.ok) {
+          const data = await res.json();
+          const teams = data.teams || [];
+          
+          // Get the highest role from all teams (owner > admin > member > viewer)
+          const rolePriority: Record<string, number> = {
+            owner: 4,
+            admin: 3,
+            member: 2,
+            viewer: 1,
+          };
+          
+          let highestRole = 'MEMBER';
+          let highestPriority = 0;
+          
+          for (const team of teams) {
+            const role = team.userRole;
+            if (role) {
+              const priority = rolePriority[role] || 0;
+              if (priority > highestPriority) {
+                highestPriority = priority;
+                highestRole = role.toUpperCase();
+              }
+            }
+          }
+          
+          setUserRole(highestRole);
+        }
+      } catch (err) {
+        console.error('[Sidebar] Failed to fetch user role:', err);
+      }
+    }
+    
+    fetchUserRole();
+  }, [session?.user?.id]);
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
@@ -85,7 +129,7 @@ export function Sidebar() {
             <p className="text-sm font-medium text-white truncate">
               {user.name || 'User'}
             </p>
-            <p className="text-xs text-gray-400">ADMIN</p>
+            <p className="text-xs text-gray-400">{userRole}</p>
           </div>
         </div>
         <button

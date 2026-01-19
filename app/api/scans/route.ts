@@ -6,6 +6,8 @@ import { withCache, cacheKeys, invalidateDomainCache, invalidateDashboardCache }
 import { enqueueScanJob } from "@/lib/queue/job-queue"
 import { isRedisAvailable } from "@/lib/redis"
 import { handleApiError } from "@/lib/errors"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 
 const startScanSchema = z.object({
   domainId: z.string().uuid(),
@@ -17,18 +19,46 @@ const startScanSchema = z.object({
 // Basic listing of recent scans across all domains (limited for dashboard)
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const searchParams = req.nextUrl.searchParams
     const domainId = searchParams.get("domainId")
     const limit = parseInt(searchParams.get("limit") || "20", 10)
 
     const cacheKey = domainId 
       ? `${cacheKeys.scanResultsByDomain(domainId)}:limit:${limit}`
-      : `scans:recent:limit:${limit}`
+      : `scans:recent:user:${session.user.id}:limit:${limit}`
 
     const scans = await withCache(
       cacheKey,
       async () => {
-        const where = domainId ? { domainId } : {}
+        let where: any = {}
+        
+        if (domainId) {
+          // Filter by specific domain
+          where = { domainId }
+        } else {
+          // Filter by user's teams
+          const userTeams = await prisma.teamMember.findMany({
+            where: { userId: session.user.id },
+            select: { teamId: true },
+          })
+          const teamIds = userTeams.map(t => t.teamId)
+          
+          if (teamIds.length === 0) {
+            return [] // User has no teams
+          }
+          
+          where = {
+            domain: {
+              teamId: { in: teamIds },
+            },
+          }
+        }
 
         return await prisma.scan.findMany({
           where,

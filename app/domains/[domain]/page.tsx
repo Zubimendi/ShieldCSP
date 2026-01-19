@@ -15,7 +15,8 @@ import {
   LayoutDashboard,
   Eye,
   AlertTriangle,
-  Settings
+  Settings,
+  Clock
 } from 'lucide-react';
 
 interface SecurityScoreEntry {
@@ -311,66 +312,80 @@ export default function DomainAnalysisPage({ params }: { params: Promise<{ domai
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Main Content: simple, honest summary from latest scan */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-[#162a2e] border-[#224349]">
-              <CardHeader>
-                <CardTitle className="text-white">Latest Scan Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {latestScan ? (
-                  <div className="space-y-4">
-                    <p className="text-sm text-gray-300">
-                      Score:{' '}
-                      <span className="font-semibold text-white">
-                        {score !== null ? `${score}/100` : 'N/A'}
-                      </span>{' '}
-                      ({grade})
-                    </p>
-                    <div className="w-full bg-[#224349] rounded-full h-2 overflow-hidden">
-                      <div
-                        className="h-2 bg-[#07b6d5] rounded-full"
-                        style={{ width: `${Math.min(100, Math.max(0, score || 0))}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-400">
-                      Scanned at {lastScannedText}
-                    </p>
-                    <div className="mt-4">
-                      <h3 className="text-sm font-semibold text-white mb-2">
-                        Headers analyzed
-                      </h3>
-                      <div className="space-y-2">
-                        {latestScan.securityScores.length === 0 ? (
-                          <p className="text-xs text-gray-400">
-                            No per-header details stored for this scan.
-                          </p>
-                        ) : (
-                          latestScan.securityScores.map((h) => (
-                            <div
-                              key={h.headerName}
-                              className="flex items-center justify-between text-xs text-gray-300"
-                            >
-                              <span>{h.headerName}</span>
-                              <span>
-                                {h.grade || '-'} ({h.score ?? 0})
-                              </span>
-                            </div>
-                          ))
-                        )}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Main Content: simple, honest summary from latest scan */}
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="bg-[#162a2e] border-[#224349]">
+                <CardHeader>
+                  <CardTitle className="text-white">Latest Scan Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {latestScan ? (
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-300">
+                        Score:{' '}
+                        <span className="font-semibold text-white">
+                          {score !== null ? `${score}/100` : 'N/A'}
+                        </span>{' '}
+                        ({grade})
+                      </p>
+                      <div className="w-full bg-[#224349] rounded-full h-2 overflow-hidden">
+                        <div
+                          className="h-2 bg-[#07b6d5] rounded-full"
+                          style={{ width: `${Math.min(100, Math.max(0, score || 0))}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        Scanned at {lastScannedText}
+                      </p>
+                      <div className="mt-4">
+                        <h3 className="text-sm font-semibold text-white mb-2">
+                          Headers analyzed
+                        </h3>
+                        <div className="space-y-2">
+                          {latestScan.securityScores.length === 0 ? (
+                            <p className="text-xs text-gray-400">
+                              No per-header details stored for this scan.
+                            </p>
+                          ) : (
+                            latestScan.securityScores.map((h, index) => (
+                              <div
+                                key={`${h.headerName}-${index}`}
+                                className="flex items-center justify-between text-xs text-gray-300"
+                              >
+                                <span>{h.headerName}</span>
+                                <span>
+                                  {h.grade || '-'} ({h.score ?? 0})
+                                </span>
+                              </div>
+                            ))
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-400">
-                    No scans yet for this domain. Trigger a manual scan to see results.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                  ) : (
+                    <p className="text-sm text-gray-400">
+                      No scans yet for this domain. Trigger a manual scan to see results.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
+        )}
+
+        {activeTab === 'scans' && (
+          <ScansTabContent domainId={domainId} />
+        )}
+
+        {activeTab === 'violations' && (
+          <ViolationsTabContent domainId={domainId} />
+        )}
+
+        {activeTab === 'configuration' && (
+          <ConfigurationTabContent domainData={domainData} />
+        )}
       </div>
 
       {/* Footer */}
@@ -401,5 +416,243 @@ export default function DomainAnalysisPage({ params }: { params: Promise<{ domai
         </div>
       </footer>
     </div>
+  );
+}
+
+interface Scan {
+  id: string;
+  scannedAt: string | null;
+  status: string;
+  overallGrade: string | null;
+  overallScore: number | null;
+  scanType: string | null;
+}
+
+// Scans Tab Component
+function ScansTabContent({ domainId }: { domainId: string }) {
+  const [scans, setScans] = useState<Scan[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchScans() {
+      try {
+        const res = await fetch(`/api/scans?domainId=${domainId}&limit=50`);
+        if (res.ok) {
+          const data = await res.json();
+          setScans(data.scans || []);
+        }
+      } catch (err) {
+        console.error('[Scans Tab] Failed to fetch scans:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchScans();
+  }, [domainId]);
+
+  if (loading) {
+    return <div className="text-gray-400">Loading scans...</div>;
+  }
+
+  return (
+    <Card className="bg-[#162a2e] border-[#224349]">
+      <CardHeader>
+        <CardTitle className="text-white">Scan History</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {scans.length === 0 ? (
+          <p className="text-sm text-gray-400">No scans found for this domain.</p>
+        ) : (
+          <div className="space-y-4">
+            {scans.map((scan) => (
+              <div
+                key={scan.id}
+                className="border border-[#224349] rounded-lg p-4 bg-[#0f2023]"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm text-white font-medium">
+                      {scan.scannedAt ? new Date(scan.scannedAt).toLocaleString() : 'Unknown time'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {scan.status === 'completed' && (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                        Completed
+                      </Badge>
+                    )}
+                    {scan.status === 'failed' && (
+                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+                        Failed
+                      </Badge>
+                    )}
+                    {scan.status === 'running' && (
+                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                        Running
+                      </Badge>
+                    )}
+                    {scan.overallGrade && (
+                      <Badge className="bg-[#07b6d5]/20 text-[#07b6d5] border-[#07b6d5]/30">
+                        {scan.overallGrade}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                {scan.overallScore !== null && (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+                      <span>Score</span>
+                      <span>{scan.overallScore}/100</span>
+                    </div>
+                    <div className="w-full bg-[#224349] rounded-full h-1.5">
+                      <div
+                        className="bg-[#07b6d5] h-1.5 rounded-full"
+                        style={{ width: `${Math.min(100, Math.max(0, scan.overallScore))}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {scan.scanType && (
+                  <p className="text-xs text-gray-500 mt-2">Type: {scan.scanType}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface Violation {
+  id: string;
+  violatedDirective: string | null;
+  blockedUri: string | null;
+  severity: string | null;
+  lastSeenAt: string | null;
+}
+
+// Violations Tab Component
+function ViolationsTabContent({ domainId }: { domainId: string }) {
+  const [violations, setViolations] = useState<Violation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchViolations() {
+      try {
+        const res = await fetch(`/api/violations?domainId=${domainId}&limit=50`);
+        if (res.ok) {
+          const data = await res.json();
+          setViolations(data.violations || []);
+        }
+      } catch (err) {
+        console.error('[Violations Tab] Failed to fetch violations:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchViolations();
+  }, [domainId]);
+
+  if (loading) {
+    return <div className="text-gray-400">Loading violations...</div>;
+  }
+
+  return (
+    <Card className="bg-[#162a2e] border-[#224349]">
+      <CardHeader>
+        <CardTitle className="text-white">CSP Violations</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {violations.length === 0 ? (
+          <p className="text-sm text-gray-400">No violations found for this domain.</p>
+        ) : (
+          <div className="space-y-4">
+            {violations.map((violation) => (
+              <div
+                key={violation.id}
+                className="border border-[#224349] rounded-lg p-4 bg-[#0f2023]"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                      <span className="text-sm text-white font-medium">
+                        {violation.violatedDirective || 'Unknown directive'}
+                      </span>
+                    </div>
+                    {violation.blockedUri && (
+                      <p className="text-xs text-gray-400 font-mono break-all">
+                        Blocked: {violation.blockedUri}
+                      </p>
+                    )}
+                  </div>
+                  {violation.severity && (
+                    <Badge
+                      className={
+                        violation.severity === 'high'
+                          ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                          : violation.severity === 'medium'
+                          ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                          : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                      }
+                    >
+                      {violation.severity}
+                    </Badge>
+                  )}
+                </div>
+                {violation.lastSeenAt && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Last seen: {new Date(violation.lastSeenAt).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Configuration Tab Component
+function ConfigurationTabContent({ domainData }: { domainData: DomainDetail | null }) {
+  if (!domainData) {
+    return <div className="text-gray-400">Loading configuration...</div>;
+  }
+
+  return (
+    <Card className="bg-[#162a2e] border-[#224349]">
+      <CardHeader>
+        <CardTitle className="text-white">Domain Configuration</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <label className="text-xs text-gray-400 uppercase tracking-wider">URL</label>
+          <p className="text-sm text-white mt-1 font-mono">{domainData.url}</p>
+        </div>
+        {domainData.name && (
+          <div>
+            <label className="text-xs text-gray-400 uppercase tracking-wider">Name</label>
+            <p className="text-sm text-white mt-1">{domainData.name}</p>
+          </div>
+        )}
+        <div>
+          <label className="text-xs text-gray-400 uppercase tracking-wider">Status</label>
+          <p className="text-sm text-white mt-1">
+            {domainData.latestScan ? 'Active' : 'No scans yet'}
+          </p>
+        </div>
+        {domainData.lastScannedAt && (
+          <div>
+            <label className="text-xs text-gray-400 uppercase tracking-wider">Last Scanned</label>
+            <p className="text-sm text-white mt-1">
+              {new Date(domainData.lastScannedAt).toLocaleString()}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
