@@ -3,10 +3,13 @@ import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { executeScan } from "@/lib/scanner/scan-executor"
 import { withCache, cacheKeys, invalidateDomainCache, invalidateDashboardCache } from "@/lib/cache"
+import { enqueueScanJob } from "@/lib/queue/job-queue"
+import { isRedisAvailable } from "@/lib/redis"
 
 const startScanSchema = z.object({
   domainId: z.string().uuid(),
   scanType: z.enum(["full", "quick", "headers-only"]).default("full"),
+  async: z.boolean().optional().default(false), // If true, queue the scan instead of executing immediately
 })
 
 // GET /api/scans
@@ -59,11 +62,44 @@ export async function GET(req: NextRequest) {
 
 // POST /api/scans
 // Creates a new scan record and executes the actual security scan
+// Supports both synchronous (default) and asynchronous (queued) execution
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json()
-    const { domainId, scanType } = startScanSchema.parse(json)
+    const { domainId, scanType, async } = startScanSchema.parse(json)
 
+    // If async and Redis is available, queue the job
+    if (async && isRedisAvailable()) {
+      try {
+        const jobId = await enqueueScanJob(domainId, scanType, {
+          priority: 5, // Higher priority for manual scans
+          maxRetries: 3,
+        });
+
+        // Create pending scan record
+        const pendingScan = await prisma.scan.create({
+          data: {
+            domainId,
+            scanType,
+            status: "pending",
+          },
+        });
+
+        return NextResponse.json(
+          {
+            scan: pendingScan,
+            jobId,
+            message: "Scan queued for background processing",
+          },
+          { status: 202 }, // 202 Accepted
+        );
+      } catch (queueError: any) {
+        console.error("[POST /api/scans] Failed to queue job:", queueError);
+        // Fall through to synchronous execution
+      }
+    }
+
+    // Synchronous execution (default or fallback)
     // Create pending scan record first
     const pendingScan = await prisma.scan.create({
       data: {
