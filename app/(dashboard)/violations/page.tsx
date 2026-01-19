@@ -93,6 +93,12 @@ export default function ViolationsDashboardPage() {
   
   const maxDirectiveCount = topDirectives[0]?.count || 1;
 
+  // Generate frequency rows for heatmap (7 days x 24 hours)
+  // This is a simplified visualization - in production, you'd use actual time-series data
+  const frequencyRows = Array.from({ length: 7 }, () => 
+    Array.from({ length: 24 }, () => Math.random() > 0.7)
+  );
+
   return (
     <div className="min-h-screen bg-[#0f2023] text-white">
       {/* Header + Filters */}

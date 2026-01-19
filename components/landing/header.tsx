@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 export function Header() {
   const pathname = usePathname();
   const isFeaturesPage = pathname === '/features';
+  const isHomePage = pathname === '/';
 
   return (
     <header className="border-b border-white/5 bg-[#0b1416]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between sticky top-0 z-50">
@@ -25,8 +26,13 @@ export function Header() {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-8 border-l border-white/10 ml-2 pl-10">
-          <Link href="/dashboard" className="text-sm font-semibold opacity-60 hover:opacity-100 transition-all text-white">
-            Dashboard
+          <Link 
+            href="/" 
+            className={`text-sm font-semibold transition-all ${
+              isHomePage ? 'opacity-100 text-[#07b6d5]' : 'opacity-60 hover:opacity-100 text-white'
+            }`}
+          >
+            Home
           </Link>
           <Link 
             href="/features" 
@@ -38,9 +44,6 @@ export function Header() {
           </Link>
           <Link href="/docs" className="text-sm font-semibold opacity-60 hover:opacity-100 transition-all text-white">
             Docs
-          </Link>
-          <Link href="#" className="text-sm font-semibold opacity-60 hover:opacity-100 transition-all text-white">
-            Enterprise
           </Link>
         </nav>
       </div>

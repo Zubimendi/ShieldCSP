@@ -175,6 +175,9 @@ export async function POST(req: NextRequest) {
       });
 
       try {
+        // Cast severity to the expected type
+        const severity = (violation.severity as 'low' | 'medium' | 'high' | 'critical') || 'medium';
+        
         await sendNotification({
           type: 'violation',
           teamId: domain.teamId,
@@ -182,7 +185,7 @@ export async function POST(req: NextRequest) {
           domainName: domain.name || domain.url,
           title: 'New CSP Violation Detected',
           message: `A new CSP violation was detected on ${domain.name || domain.url}.\n\nViolated Directive: ${violation.violatedDirective || 'Unknown'}\nBlocked URI: ${violation.blockedUri || 'N/A'}\nSeverity: ${violation.severity || 'Unknown'}`,
-          severity: violation.severity || 'medium',
+          severity: severity,
           metadata: {
             violationId: violation.id,
             documentUri: violation.documentUri,

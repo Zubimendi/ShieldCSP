@@ -3,6 +3,7 @@ import { z } from "zod"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import { requirePermission } from "@/lib/teams/permissions"
 import { createAuditLogFromNextRequest } from "@/lib/audit"
 
@@ -16,7 +17,7 @@ const updateApiKeySchema = z.object({
 // Update API key metadata (name, scopes, expiry)
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -25,7 +26,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
     const json = await req.json()
     const data = updateApiKeySchema.parse(json)
 
@@ -44,17 +45,28 @@ export async function PATCH(
       "api-key:create",
     )
 
+    // Build update data conditionally
+    const updateData: {
+      name?: string | null;
+      scopes?: Prisma.InputJsonValue;
+      expiresAt?: Date | null;
+    } = {};
+
+    if (data.name !== undefined) {
+      updateData.name = data.name ?? existing.name;
+    }
+    if (data.scopes !== undefined) {
+      updateData.scopes = data.scopes as Prisma.InputJsonValue;
+    }
+    if (data.expiresAt !== undefined) {
+      updateData.expiresAt = data.expiresAt
+        ? new Date(data.expiresAt)
+        : null;
+    }
+
     const updated = await prisma.apiKey.update({
       where: { id },
-      data: {
-        name: data.name ?? existing.name,
-        scopes: data.scopes ?? existing.scopes,
-        expiresAt: data.expiresAt
-          ? new Date(data.expiresAt)
-          : data.expiresAt === null
-          ? null
-          : existing.expiresAt,
-      },
+      data: updateData,
       select: {
         id: true,
         teamId: true,
@@ -107,7 +119,7 @@ export async function PATCH(
 // Delete an API key
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -116,7 +128,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     const existing = await prisma.apiKey.findUnique({
       where: { id },

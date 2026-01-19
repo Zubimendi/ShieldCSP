@@ -277,7 +277,7 @@ export default function ScannerPage() {
                             stroke="currentColor"
                             strokeWidth="8"
                             fill="none"
-                            strokeDasharray={`${(score / 100) * 251.2} 251.2`}
+                            strokeDasharray={`${((score ?? 0) / 100) * 251.2} 251.2`}
                             className="text-[#14b8a6]"
                           />
                         </svg>

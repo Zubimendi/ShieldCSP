@@ -13,7 +13,7 @@ const updateMemberSchema = z.object({
 // Update member role
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { teamId: string; userId: string } },
+  { params }: { params: Promise<{ teamId: string; userId: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -22,7 +22,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { teamId, userId } = params;
+    const { teamId, userId } = await params;
     const json = await req.json();
     const { role } = updateMemberSchema.parse(json);
 
@@ -137,7 +137,7 @@ export async function PATCH(
 // Remove member from team
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { teamId: string; userId: string } },
+  { params }: { params: Promise<{ teamId: string; userId: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -146,7 +146,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { teamId, userId } = params;
+    const { teamId, userId } = await params;
 
     // Check permissions
     await requirePermission(session.user.id, teamId, 'team:manage-members');

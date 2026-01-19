@@ -104,7 +104,7 @@ export async function createAuditLogFromRequest(
   req: Request,
   data: Omit<AuditLogData, 'ipAddress' | 'userAgent'>
 ): Promise<void> {
-  const headersList = headers();
+  const headersList = await headers();
   const ipAddress =
     headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     headersList.get('x-real-ip') ||

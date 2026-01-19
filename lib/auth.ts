@@ -94,18 +94,6 @@ export const authOptions: NextAuthOptions = {
         // Don't fail auth if logging fails
       }
     },
-    async signInError({ error }) {
-      // Log authentication errors
-      try {
-        const { logError } = await import('@/lib/logger')
-        await logError('Authentication failed', error, {
-          endpoint: '/api/auth/[...nextauth]',
-          method: 'POST',
-        })
-      } catch (logError) {
-        // Don't fail if logging fails
-      }
-    },
   },
   callbacks: {
     async jwt({ token, user }) {

@@ -16,7 +16,7 @@ const updateTeamSchema = z.object({
 // Get team details
 export async function GET(
   req: NextRequest,
-  { params }: { params: { teamId: string } },
+  { params }: { params: Promise<{ teamId: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -25,7 +25,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { teamId } = params;
+    const { teamId } = await params;
 
     // Check if user is a member
     await requirePermission(session.user.id, teamId, 'team:read');
@@ -106,7 +106,7 @@ export async function GET(
 // Update team (name, plan)
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { teamId: string } },
+  { params }: { params: Promise<{ teamId: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -115,7 +115,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { teamId } = params;
+    const { teamId } = await params;
     const json = await req.json();
     const updates = updateTeamSchema.parse(json);
 
@@ -220,7 +220,7 @@ export async function PATCH(
 // Delete team (owner only)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { teamId: string } },
+  { params }: { params: Promise<{ teamId: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -229,7 +229,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { teamId } = params;
+    const { teamId } = await params;
 
     // Only owner can delete team
     const isOwner = await isTeamOwner(session.user.id, teamId);
