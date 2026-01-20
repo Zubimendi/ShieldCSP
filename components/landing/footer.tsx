@@ -52,15 +52,15 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-slate-600">© 2024 ShieldCSP Inc. All rights reserved.</p>
+          <p className="text-xs text-slate-400">© 2024 ShieldCSP Inc. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="#" className="text-slate-600 hover:text-[#07b6d5] transition-colors">
+            <Link href="#" className="text-slate-400 hover:text-[#07b6d5] transition-colors">
               <span className="material-symbols-outlined text-lg">public</span>
             </Link>
-            <Link href="#" className="text-slate-600 hover:text-[#07b6d5] transition-colors">
+            <Link href="#" className="text-slate-400 hover:text-[#07b6d5] transition-colors">
               <span className="material-symbols-outlined text-lg">terminal</span>
             </Link>
-            <Link href="#" className="text-slate-600 hover:text-[#07b6d5] transition-colors">
+            <Link href="#" className="text-slate-400 hover:text-[#07b6d5] transition-colors">
               <span className="material-symbols-outlined text-lg">code</span>
             </Link>
           </div>
@@ -82,7 +82,7 @@ export function Footer() {
               </div>
               <h2 className="text-white text-lg font-black tracking-tight">ShieldCSP</h2>
             </div>
-            <p className="text-sm text-slate-500 leading-relaxed">
+            <p className="text-sm text-slate-300 leading-relaxed">
               Elite cybersecurity platform protecting modern web apps from XSS and injection attacks.
             </p>
           </div>
@@ -90,13 +90,13 @@ export function Footer() {
           {/* Product Links */}
           <div className="flex flex-col gap-4">
             <h4 className="text-white text-sm font-bold">Product</h4>
-            <Link href="/scanner" className="text-sm text-slate-500 hover:text-[#07b6d5] transition-colors">
+            <Link href="/scanner" className="text-sm text-slate-300 hover:text-[#07b6d5] transition-colors">
               Analyzer
             </Link>
-            <Link href="/violations" className="text-sm text-slate-500 hover:text-[#07b6d5] transition-colors">
+            <Link href="/violations" className="text-sm text-slate-300 hover:text-[#07b6d5] transition-colors">
               Monitoring
             </Link>
-            <Link href="/codegen" className="text-sm text-slate-500 hover:text-[#07b6d5] transition-colors">
+            <Link href="/codegen" className="text-sm text-slate-300 hover:text-[#07b6d5] transition-colors">
               AI Generator
             </Link>
           </div>
@@ -104,13 +104,13 @@ export function Footer() {
           {/* Company Links */}
           <div className="flex flex-col gap-4">
             <h4 className="text-white text-sm font-bold">Company</h4>
-            <Link href="#about" className="text-sm text-slate-500 hover:text-[#07b6d5] transition-colors">
+            <Link href="#about" className="text-sm text-slate-300 hover:text-[#07b6d5] transition-colors">
               About Us
             </Link>
-            <Link href="#security" className="text-sm text-slate-500 hover:text-[#07b6d5] transition-colors">
+            <Link href="#security" className="text-sm text-slate-300 hover:text-[#07b6d5] transition-colors">
               Security
             </Link>
-            <Link href="#privacy" className="text-sm text-slate-500 hover:text-[#07b6d5] transition-colors">
+            <Link href="#privacy" className="text-sm text-slate-300 hover:text-[#07b6d5] transition-colors">
               Privacy
             </Link>
           </div>
@@ -137,15 +137,17 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-8 border-t border-white/5">
-          <p className="text-xs text-slate-600">© 2024 ShieldCSP Inc. All rights reserved.</p>
+          <p className="text-xs text-slate-400">
+            © 2024 ShieldCSP. Built by <span className="font-semibold text-slate-100">Offiong Francis (0xkali)</span>. All rights reserved.
+          </p>
           <div className="flex gap-6">
-            <Link href="#terms" className="text-xs text-slate-600 hover:text-slate-400">
+            <Link href="#terms" className="text-xs text-slate-400 hover:text-slate-200">
               Terms
             </Link>
-            <Link href="#privacy" className="text-xs text-slate-600 hover:text-slate-400">
+            <Link href="#privacy" className="text-xs text-slate-400 hover:text-slate-200">
               Privacy
             </Link>
-            <Link href="#cookies" className="text-xs text-slate-600 hover:text-slate-400">
+            <Link href="#cookies" className="text-xs text-slate-400 hover:text-slate-200">
               Cookies
             </Link>
           </div>

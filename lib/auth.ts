@@ -73,6 +73,12 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
+    // Force users to re-authenticate periodically
+    // maxAge is in seconds – here: 12 hours
+    maxAge: 12 * 60 * 60,
+    // How often to update the session token while the user is active
+    // (keeps active users logged in up to maxAge)
+    updateAge: 60 * 60, // 1 hour
   },
   pages: {
     signIn: "/login",
