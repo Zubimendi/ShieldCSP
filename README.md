@@ -13,12 +13,12 @@ ShieldCSP is an all-in-one platform that combines intelligent security scanning,
 
 ### Key Features
 
-- 🔍 **Intelligent Security Scanner** - Analyzes 15+ security headers with A-F grading
-- 🚨 **Real-Time CSP Violation Monitoring** - Track and analyze violation reports from browsers
-- 🛠️ **Next.js Code Generator** - Generate production-ready middleware with nonces/hashes
-- 🧪 **XSS Testing Laboratory** - Test payloads against different CSP policies
-- 📊 **Multi-Domain Dashboard** - Track unlimited domains with historical analytics
-- 🤖 **AI-Powered Assistant** - Get natural language explanations and fix suggestions
+- 🔍 **Intelligent Security Scanner** – Server-side header analysis for 15+ security headers with A–F grading
+- 🚨 **Real-Time CSP Violation Monitoring** – Ingest and explore browser `report-uri` / `report-to` violation data
+- 🛠️ **Security Headers Code Generator** – Generate server-side middleware (Next.js / Node.js) that applies strong CSP + security headers to your own apps
+- 🧪 **XSS Testing Laboratory** – An interactive, *simulated* lab to explore how XSS payloads behave under different CSP strategies
+- 📊 **Multi-Domain Dashboard** – Track multiple domains and historical scan/violation data across teams
+- 🤖 **AI-Powered Assistant** – Natural-language explanations and remediation suggestions for misconfigurations
 
 ## 🚀 Quick Start
 
@@ -85,7 +85,7 @@ shield-csp/
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 15.1.6 (App Router)
+- **Framework**: Next.js 16.x (App Router)
 - **Language**: TypeScript 5.7+ (strict mode)
 - **UI Components**: shadcn/ui (Radix UI primitives)
 - **Styling**: TailwindCSS 4.0
@@ -93,16 +93,48 @@ shield-csp/
 - **Forms**: React Hook Form + Zod
 
 ### Backend
-- **Runtime**: Node.js 20.x + Edge Runtime
-- **API**: Next.js App Router API routes
+- **Runtime**: Node.js 20.x (Node.js runtime + App Router)
+- **API**: Next.js App Router API routes (`app/api/**/route.ts`)
 - **ORM**: Prisma 6.x with PostgreSQL
-- **Authentication**: NextAuth.js v5 (GitHub OAuth)
+- **Authentication**: NextAuth.js v4 (JWT sessions + GitHub OAuth)
+- **Session Model**: JWT strategy with 12‑hour `maxAge` and 1‑hour `updateAge` (users are periodically forced to re‑authenticate)
 - **Validation**: Zod schemas
 
 ### Security & Analysis
 - **HTML Sanitization**: DOMPurify 3.x
-- **CSP Parsing**: Custom engine + Google CSP Evaluator
-- **XSS Detection**: Pattern matching + DOM analysis
+- **CSP Parsing**: Custom parser + heuristics inspired by Google CSP Evaluator
+- **Header Grading**: Weighted scoring per header (CSP/HSTS/XFO/etc.) with A–F and 0–100 scores
+- **XSS Testing**: Simulated payload evaluation via `lib/xss/engine` and the XSS Lab UI
+
+## 🧩 How ShieldCSP Fits Into Your Stack
+
+ShieldCSP is designed as a companion security service that runs **alongside** your applications, not inside them:
+
+1. **Dashboard & APIs (this repo)**  
+   A Next.js App Router app you deploy (e.g. to Vercel). It hosts:
+   - `/dashboard`, `/scanner`, `/violations`, `/codegen`, `/xss-lab`, `/team`, `/audit-logs`
+   - API routes under `/api/**` for scans, codegen, teams, XSS tests, violations, etc.
+
+2. **Server-Side Scanning**  
+   The scanner (`/api/scans`) runs entirely on the server:
+   - `executeScan` (`lib/scanner/scan-executor.ts`) uses `fetchSecurityHeaders` to call the target domain from the server.
+   - `analyzeSecurityHeaders` and `parseCSP` compute per-header scores and an overall grade.
+   - Results are stored in `prisma.scan` + `security_scores` and exposed back to the UI via `/api/scans` and `/api/domains/[id]`.
+
+3. **Security Middleware for Your Apps**  
+   The **Code Generator** (`/codegen` + `/api/codegen`) produces *server-side middleware* you paste into your own apps:
+   - For **Next.js App Router**, you generate a `middleware.ts` file that wraps `NextRequest`/`NextResponse` and sets CSP/HSTS/XFO/Referrer-Policy/Permissions-Policy headers on every request.
+   - For **Pages Router / Express / generic Node.js**, you generate an Express-style middleware (`(req, res, next)`) that sets the same headers on responses.
+   - This is how ShieldCSP actually protects traffic: the generated code runs in your app’s process and enforces headers on every request.
+
+4. **CSP Violation Ingestion**  
+   - Browsers send CSP reports to your deployment’s `/api/csp-report` endpoint.
+   - The handler normalizes and stores `violation` + `violation_patterns` records for analysis in the **Violations** and **Audit Logs** views.
+
+5. **Teams & Access Control**  
+   - Users authenticate via NextAuth (GitHub OAuth or email/password).
+   - A `team` represents a workspace; all `domains`, `scans`, `violations`, `generated_configs`, and `xss_tests` are scoped to a team.
+   - The `proxy.ts` middleware uses `getToken` from `next-auth/jwt` to protect dashboard routes (`/dashboard`, `/scanner`, `/codegen`, `/xss-lab`, `/violations`, `/teams`, etc.) and redirect unauthenticated users to `/login`.
 
 ### Database & Caching
 - **Primary DB**: PostgreSQL 16
@@ -257,14 +289,28 @@ npm run build
 - `DELETE /api/domains/[id]` - Delete domain
 
 ### Security Scanning
-- `POST /api/scan` - Trigger manual scan
-- `GET /api/scans/[id]` - Get scan results
+- `GET /api/scans?domainId=<id>&limit=50` – List recent scans (optionally filtered by domain)
+- `POST /api/scans` – Trigger a synchronous scan and create a `scan` record
 
 ### CSP Violation Reporting
-- `POST /api/csp-report` - Receive violation reports (public endpoint)
+- `POST /api/csp-report` – Receive CSP violation reports from browsers (public endpoint)
 
 ### Code Generation
-- `POST /api/generate/middleware` - Generate middleware code
+- `POST /api/codegen` – Generate middleware code for a given framework/strategy (optionally save config)
+- `GET /api/codegen` – List previously generated configs for the current user/team
+
+### Teams & Members
+- `GET /api/teams` – List teams for the current user (with role and member counts)
+- `POST /api/teams` – Create a new team
+- `GET /api/teams/[teamId]` – Get team details
+- `PATCH /api/teams/[teamId]` – Update team name/plan
+- `DELETE /api/teams/[teamId]` – Delete a team (owner only)
+- `GET /api/teams/[teamId]/members` – List team members
+- `POST /api/teams/[teamId]/members` – Add a member by email and role
+
+### XSS Tests
+- `GET /api/xss-tests?teamId=<id>` – List recent XSS tests (optional filter by team)
+- `POST /api/xss-tests` – Create a new XSS test via the modeled XSS engine
 
 See the PRD for complete API documentation.
 

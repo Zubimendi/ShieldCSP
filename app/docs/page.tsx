@@ -162,77 +162,116 @@ export default function DocsPage() {
               </div>
               <h1 className="text-4xl font-bold mb-4">Quick Start Guide</h1>
               <p className="text-lg text-gray-400">
-                ShieldCSP provides comprehensive Content Security Policy monitoring and XSS prevention for modern web applications. Follow this guide to integrate ShieldCSP into your environment in under 5 minutes.
+                ShieldCSP runs as its own Next.js service that scans domains, ingests CSP reports, and generates
+                server-side middleware you can plug into your own Next.js/React apps.
               </p>
             </div>
 
-            {/* Install SDK */}
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold mb-2">1. Install the SDK</h2>
+            {/* 1. Run ShieldCSP */}
+            <section className="mb-12" id="install-sdk">
+              <h2 className="text-2xl font-bold mb-2">1. Run the ShieldCSP service</h2>
               <p className="text-gray-400 mb-4">
-                First, install the ShieldCSP client library for your preferred package manager.
+                Clone and run the ShieldCSP dashboard/API (this repo) locally or deploy it to Vercel. This service hosts
+                the dashboard, scanner, code generator, and API routes.
               </p>
               <Card className="bg-[#162a2e] border-[#224349]">
                 <CardContent className="p-0">
                   <div className="flex items-center justify-between px-4 py-2 border-b border-[#224349]">
                     <span className="text-sm text-gray-400">Terminal</span>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-400 hover:text-white">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </Button>
                   </div>
-                  <div className="p-4">
-                    <code className="text-sm text-gray-300 font-mono">npm install @shieldcsp/nextjs</code>
+                  <div className="p-4 space-y-2">
+                    <code className="block text-sm text-gray-300 font-mono">
+                      git clone https://github.com/Zubimendi/ShieldCSP.git
+                    </code>
+                    <code className="block text-sm text-gray-300 font-mono">cd shield-csp</code>
+                    <code className="block text-sm text-gray-300 font-mono">npm install</code>
+                    <code className="block text-sm text-gray-300 font-mono">npm run dev</code>
                   </div>
                 </CardContent>
               </Card>
             </section>
 
-            {/* Configure Next.js */}
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold mb-2">2. Configure Next.js Integration</h2>
+            {/* 2. Add a domain & run a scan */}
+            <section className="mb-12" id="configuration">
+              <h2 className="text-2xl font-bold mb-2">2. Add a domain and run a scan</h2>
               <p className="text-gray-400 mb-4">
-                Integrate ShieldCSP into your Next.js application by wrapping your root layout or middleware. This will automatically inject the necessary CSP headers and enable reporting.
+                From the dashboard, add one or more domains you want to protect, then run scans from the Scanner page.
+                Scans are executed on the server and results are stored in PostgreSQL for dashboards and history.
+              </p>
+              <ul className="list-disc list-inside text-sm text-gray-300 space-y-1 mb-4">
+                <li>Go to <code className="bg-white/5 px-1 rounded border border-white/10">/domains</code> and add a domain.</li>
+                <li>Open <code className="bg-white/5 px-1 rounded border border-white/10">/scanner</code>, choose the domain, and click <strong>RUN SCAN</strong>.</li>
+                <li>Review the grade, header breakdown, and recommendations.</li>
+              </ul>
+            </section>
+
+            {/* 3. Integrate generated middleware */}
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold mb-2">3. Integrate generated middleware into your app</h2>
+              <p className="text-gray-400 mb-4">
+                Use the Code Generator to create security middleware for your framework. For Next.js App Router, paste
+                the generated code into a <code className="bg-white/5 px-1 rounded border border-white/10">middleware.ts</code>{' '}
+                file at the root of your app.
               </p>
               <Card className="bg-[#162a2e] border-[#224349]">
                 <CardContent className="p-0">
                   <div className="flex items-center justify-between px-4 py-2 border-b border-[#224349]">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-400">app/layout.tsx</span>
-                      <span className="text-xs text-gray-500">TypeScript</span>
+                      <span className="text-sm text-gray-400">middleware.ts</span>
+                      <span className="text-xs text-gray-500">Next.js App Router</span>
                     </div>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-400 hover:text-white">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </Button>
                   </div>
                   <div className="p-4">
                     <pre className="text-sm text-gray-300 font-mono overflow-x-auto">
-                      <code>{`import { ShieldProvider } from '@shieldcsp/nextjs';
+                      <code>{`import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export default function RootLayout({ children }) {
-  return (
-    <html lang="en">
-      <body>
-        <ShieldProvider
-          apiKey={process.env.SHIELD_API_KEY}
-          options={{
-            strictMode: true,
-            reportOnly: false,
-          }}
-        >
-          {children}
-        </ShieldProvider>
-      </body>
-    </html>
-  );
-}`}</code>
+// Paste the generated code from /codegen here.
+// This example shows a simplified version of the nonce-based middleware:
+
+export function middleware(request: NextRequest) {
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+
+  const requestHeaders = new Headers(request.headers);
+  const cspHeader = \`
+    default-src 'self';
+    script-src 'self' 'nonce-\${nonce}' 'strict-dynamic';
+    style-src 'self' 'nonce-\${nonce}';
+    img-src 'self' data: https:;
+    font-src 'self';
+    connect-src 'self';
+    frame-src 'none';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    upgrade-insecure-requests;
+  \`.replace(/\\s{2,}/g, ' ').trim();
+
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', cspHeader);
+  requestHeaders.set('X-Content-Type-Options', 'nosniff');
+  requestHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+
+  return response;
+}
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+};`}</code>
                     </pre>
                   </div>
                 </CardContent>
               </Card>
+              <p className="text-sm text-gray-400 mt-4">
+                For Express or generic Node.js backends, choose the corresponding option in{' '}
+                <code className="bg-white/5 px-1 rounded border border-white/10">/codegen</code> and paste the generated
+                middleware into your server (e.g. <code className="bg-white/5 px-1 rounded border border-white/10">app.use(securityMiddleware)</code>).
+              </p>
             </section>
 
             {/* Pro Tip */}
