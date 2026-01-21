@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "ShieldCSP Helper",
+  "description": "Quickly send the current page to your ShieldCSP scanner and dashboard.",
+  "version": "0.1.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ShieldCSP"
+  },
+  "permissions": ["tabs"],
+  "host_permissions": [
+    "https://shield-csp.vercel.app/*",
+    "http://localhost/*"
+  ]
+}
+

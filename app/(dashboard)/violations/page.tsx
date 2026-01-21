@@ -218,10 +218,15 @@ export default function ViolationsDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* AI Pattern Recognition */}
+          {/* AI Pattern Recognition (future) */}
           <Card className="bg-[#162a2e] border-[#224349]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">AI Pattern Recognition</CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-sm">AI Pattern Recognition</CardTitle>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#facc15] bg-[#facc15]/10 px-2 py-0.5 rounded-full">
+                  Coming Soon
+                </span>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">

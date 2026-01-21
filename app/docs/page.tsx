@@ -289,6 +289,26 @@ export const config = {
               </CardContent>
             </Card>
 
+            {/* Chrome extension (planned) */}
+            <section className="mb-12" id="chrome-extension">
+              <h2 className="text-2xl font-bold mb-2">4. Chrome Extension Mode (Planned)</h2>
+              <p className="text-gray-400 mb-4">
+                A future Chrome extension will act as a thin client on top of this service. It will read the active tab
+                URL, then call your existing APIs (e.g. <code className="bg-white/5 px-1 rounded border border-white/10">/api/scans</code>{' '}
+                and <code className="bg-white/5 px-1 rounded border border-white/10">/api/codegen</code>) to show grades
+                and suggested headers without leaving the page.
+              </p>
+              <ul className="list-disc list-inside text-sm text-gray-300 space-y-1 mb-2">
+                <li>Authentication will use team-scoped API keys generated from the dashboard.</li>
+                <li>The extension sends <code className="bg-white/5 px-1 rounded border border-white/10">Authorization: Bearer &lt;api-key&gt;</code> with each request.</li>
+                <li>All scanning and policy generation still happens on the ShieldCSP server.</li>
+              </ul>
+              <p className="text-sm text-gray-400">
+                This keeps your security logic centralized in one service while giving you a fast, in-browser UX for
+                ad‑hoc checks.
+              </p>
+            </section>
+
             {/* Bottom Navigation */}
             <div className="flex items-center justify-between pt-8 border-t border-[#224349]">
               <Link href="/docs" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">

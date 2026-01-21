@@ -9,10 +9,12 @@ export function Hero() {
       <div className="grid lg:grid-cols-2 gap-16 items-center">
         {/* Left Side - Content */}
         <div className="flex flex-col gap-8">
-          {/* New Feature Badge */}
+          {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-[#07b6d5]/10 border border-[#07b6d5]/20 px-3 py-1 rounded-full w-fit">
             <span className="flex h-2 w-2 rounded-full bg-[#07b6d5] animate-pulse"></span>
-            <span className="text-xs font-bold text-[#07b6d5] tracking-widest uppercase">New: AI Policy Generator v2.0</span>
+            <span className="text-xs font-bold text-[#07b6d5] tracking-widest uppercase">
+              Security Middleware & CSP Scanner
+            </span>
           </div>
 
           {/* Headline */}

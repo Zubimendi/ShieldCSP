@@ -136,6 +136,16 @@ ShieldCSP is designed as a companion security service that runs **alongside** yo
    - A `team` represents a workspace; all `domains`, `scans`, `violations`, `generated_configs`, and `xss_tests` are scoped to a team.
    - The `proxy.ts` middleware uses `getToken` from `next-auth/jwt` to protect dashboard routes (`/dashboard`, `/scanner`, `/codegen`, `/xss-lab`, `/violations`, `/teams`, etc.) and redirect unauthenticated users to `/login`.
 
+6. **Chrome Extension Mode (Planned)**  
+   ShieldCSP is designed so a future Chrome extension can reuse the same APIs:
+   - The extension popup can **read the active tab URL**, then call:
+     - `POST /api/scans` (or a dedicated `/api/scan-url`) to trigger a scan for that URL.
+     - `POST /api/codegen` to fetch recommended security headers / middleware snippets.
+   - Authentication will use **team-scoped API keys** instead of browser cookies:
+     - You create a key from the dashboard (per team) and paste it into the extension.
+     - The extension sends `Authorization: Bearer <api-key>`; the backend verifies it with `verifyApiKey` from `lib/api-keys.ts`.
+   - This keeps the browser add-on very thin: it just calls your existing service and renders the same scan/grade information you already see in the dashboard.
+
 ### Database & Caching
 - **Primary DB**: PostgreSQL 16
 - **Cache**: Upstash Redis (Edge-compatible)

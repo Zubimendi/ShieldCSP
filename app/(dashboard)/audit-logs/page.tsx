@@ -1,8 +1,109 @@
 'use client';
 
-import { Download, FileSpreadsheet, Calendar, Filter, ExternalLink, ChevronLeft, ChevronRight, Bot, Lock, Clock } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Download,
+  FileSpreadsheet,
+  Calendar,
+  Filter,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  Bot,
+  Lock,
+  Clock,
+} from 'lucide-react';
+
+interface AuditLog {
+  id: string;
+  action: string;
+  resourceType: string | null;
+  resourceId: string | null;
+  metadata: Record<string, any> | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  } | null;
+  team: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+}
 
 export default function AuditLogsPage() {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchLogs() {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/audit-logs?limit=200');
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to load audit logs');
+        }
+        const data = await res.json();
+        setLogs(data.logs || []);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load audit logs');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLogs();
+  }, []);
+
+  const total = logs.length;
+
+  const derivedRows = useMemo(
+    () =>
+      logs.map((log) => {
+        const ts = new Date(log.createdAt).toLocaleString();
+        const userLabel = log.user?.email || log.user?.name || 'System';
+        const ip = log.ipAddress || '—';
+        const meta = log.metadata || {};
+
+        // Derive a short action label
+        const actionLabel = (() => {
+          if (log.action.startsWith('team:')) return 'Team Event';
+          if (log.action.startsWith('api-key:')) return 'API Key';
+          if (log.action.startsWith('security:violation')) return 'CSP Violation';
+          if (log.action.startsWith('security:scan')) return 'Scan Event';
+          if (log.action.startsWith('auth:')) return 'Auth Event';
+          return log.action;
+        })();
+
+        // Very simple status classification
+        const status: 'success' | 'warning' | 'failed' = log.action.includes('delete') || log.action.includes('fail')
+          ? 'warning'
+          : 'success';
+
+        const location =
+          (meta.location as string) ||
+          (log.team ? `${log.team.name}` : '') ||
+          '—';
+
+        return {
+          ...log,
+          ts,
+          userLabel,
+          ip,
+          actionLabel,
+          status,
+          location,
+        };
+      }),
+    [logs],
+  );
+
   return (
     <div className="min-h-full bg-[#0f2023] text-white px-8 py-8">
       <div className="max-w-6xl xl:max-w-7xl mx-auto space-y-6">
@@ -49,7 +150,7 @@ export default function AuditLogsPage() {
             </div>
           </div>
 
-          {/* Filters */}
+          {/* Filters (visual only for now) */}
           <div className="p-4 flex flex-wrap justify-between items-center gap-4 bg-[#102023]/70">
             <div className="flex flex-wrap gap-3">
               <button className="flex items-center gap-2 px-3 py-2 bg-[#224349] text-[#8fc3cc] rounded-lg text-sm border border-transparent hover:border-[#306069]">
@@ -62,7 +163,9 @@ export default function AuditLogsPage() {
               </button>
             </div>
             <div className="text-[#8fc3cc] text-xs md:text-sm whitespace-nowrap">
-              Showing 1-15 of 1,284 results
+              {loading
+                ? 'Loading events…'
+                : `Showing ${derivedRows.length} ${derivedRows.length === 1 ? 'event' : 'events'}`}
             </div>
           </div>
 
@@ -81,166 +184,68 @@ export default function AuditLogsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#224349] text-sm">
-                {/* Row 1 */}
-                <tr className="hover:bg-[#224349]/20 transition-colors group">
-                  <td className="px-6 py-4 text-white font-medium">
-                    2023-10-31 14:22:01
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs">
-                      CSP Policy Modified
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-slate-700" />
-                      <span className="text-white">david.chen@shieldcsp.io</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-[#8fc3cc]">
-                    192.168.1.42
-                  </td>
-                  <td className="px-6 py-4 text-[#8fc3cc]">San Francisco, US</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="text-emerald-500 font-medium">Success</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
-                      <ExternalLink className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-
-                {/* Row 2 */}
-                <tr className="hover:bg-[#224349]/20 transition-colors group">
-                  <td className="px-6 py-4 text-white font-medium">
-                    2023-10-31 14:18:45
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs">
-                      Failed Login Attempt
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-slate-700" />
-                      <span className="text-white">unknown_entity_401</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-[#8fc3cc]">45.221.12.8</td>
-                  <td className="px-6 py-4 text-[#8fc3cc]">Kyiv, UA</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
-                      <span className="text-rose-500 font-medium">Failed</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
-                      <ExternalLink className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-
-                {/* Row 3 */}
-                <tr className="hover:bg-[#224349]/20 transition-colors group">
-                  <td className="px-6 py-4 text-white font-medium">
-                    2023-10-31 13:55:12
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs">
-                      Vulnerability Scan
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-[#07b6d5]/20 flex items-center justify-center">
-                        <Bot className="h-3.5 w-3.5 text-[#07b6d5]" />
-                      </div>
-                      <span className="text-white">system_worker_04</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-[#8fc3cc]">10.0.0.125</td>
-                  <td className="px-6 py-4 text-[#8fc3cc]">Internal VPC</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="text-emerald-500 font-medium">Success</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
-                      <ExternalLink className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-
-                {/* Row 4 */}
-                <tr className="hover:bg-[#224349]/20 transition-colors group">
-                  <td className="px-6 py-4 text-white font-medium">
-                    2023-10-31 13:40:22
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 rounded bg-slate-500/10 text-slate-300 border border-slate-500/20 text-xs">
-                      Report Exported
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-slate-700" />
-                      <span className="text-white">sarah.j@shieldcsp.io</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-[#8fc3cc]">82.145.2.11</td>
-                  <td className="px-6 py-4 text-[#8fc3cc]">London, UK</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-amber-400" />
-                      <span className="text-amber-400 font-medium">Warning</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
-                      <ExternalLink className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-
-                {/* Row 5 */}
-                <tr className="hover:bg-[#224349]/20 transition-colors group">
-                  <td className="px-6 py-4 text-white font-medium">
-                    2023-10-31 13:12:09
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs">
-                      Auth Key Created
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-slate-700" />
-                      <span className="text-white">david.chen@shieldcsp.io</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-[#8fc3cc]">
-                    192.168.1.42
-                  </td>
-                  <td className="px-6 py-4 text-[#8fc3cc]">San Francisco, US</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="text-emerald-500 font-medium">Success</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
-                      <ExternalLink className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
+                {loading && (
+                  <tr>
+                    <td className="px-6 py-6 text-[#8fc3cc]" colSpan={7}>
+                      Loading audit events…
+                    </td>
+                  </tr>
+                )}
+                {!loading && derivedRows.length === 0 && (
+                  <tr>
+                    <td className="px-6 py-6 text-[#8fc3cc]" colSpan={7}>
+                      No audit events found for your teams yet.
+                    </td>
+                  </tr>
+                )}
+                {!loading &&
+                  derivedRows.map((log) => (
+                    <tr key={log.id} className="hover:bg-[#224349]/20 transition-colors group">
+                      <td className="px-6 py-4 text-white font-medium">{log.ts}</td>
+                      <td className="px-6 py-4">
+                        <span className="px-2 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs">
+                          {log.actionLabel}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-full bg-slate-700" />
+                          <span className="text-white">{log.userLabel}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-mono text-[#8fc3cc]">{log.ip}</td>
+                      <td className="px-6 py-4 text-[#8fc3cc]">{log.location}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`h-2 w-2 rounded-full ${
+                              log.status === 'success'
+                                ? 'bg-emerald-500'
+                                : log.status === 'warning'
+                                  ? 'bg-amber-400'
+                                  : 'bg-rose-500'
+                            }`}
+                          />
+                          <span
+                            className={`font-medium ${
+                              log.status === 'success'
+                                ? 'text-emerald-500'
+                                : log.status === 'warning'
+                                  ? 'text-amber-400'
+                                  : 'text-rose-500'
+                            }`}
+                          >
+                            {log.status === 'success' ? 'Info' : 'Warning'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button className="text-[#8fc3cc] hover:text-[#07b6d5] transition-colors">
+                          <ExternalLink className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

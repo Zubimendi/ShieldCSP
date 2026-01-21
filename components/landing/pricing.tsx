@@ -39,9 +39,9 @@ export function Pricing() {
               <span className="material-symbols-outlined text-[#07b6d5] text-[20px]">check_circle</span>
               7 Days Data Retention
             </li>
-            <li className="flex items-center gap-3 text-sm text-slate-500 line-through">
-              AI Policy Generation
-            </li>
+              <li className="flex items-center gap-3 text-sm text-slate-500 line-through">
+                AI Policy Generation (Coming Soon)
+              </li>
           </ul>
         </div>
 
@@ -71,8 +71,8 @@ export function Pricing() {
                 10 Domains Monitoring
               </li>
               <li className="flex items-center gap-3 text-sm text-white font-medium">
-                <span className="material-symbols-outlined text-[#07b6d5] text-[20px] fill-1">check_circle</span>
-                AI Policy Generation
+                <span className="material-symbols-outlined text-[#07b6d5] text-[20px] fill-1">schedule</span>
+                AI Policy Generation (Next Version)
               </li>
               <li className="flex items-center gap-3 text-sm text-white font-medium">
                 <span className="material-symbols-outlined text-[#07b6d5] text-[20px] fill-1">check_circle</span>

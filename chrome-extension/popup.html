@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ShieldCSP</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 12px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #0f2023;
+        color: #e5f4f6;
+        min-width: 320px;
+      }
+      .card {
+        border-radius: 10px;
+        border: 1px solid #224349;
+        background: #102023;
+        padding: 12px;
+      }
+      .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #8fc3cc;
+        margin-bottom: 4px;
+      }
+      .input {
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid #224349;
+        background: #081417;
+        color: #e5f4f6;
+        font-size: 12px;
+      }
+      .input::placeholder {
+        color: #4b7b84;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .btn {
+        flex: 1;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 0;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .btn-primary {
+        background: #07b6d5;
+        color: #0f2023;
+      }
+      .btn-secondary {
+        background: #224349;
+        color: #e5f4f6;
+      }
+      .hint {
+        margin-top: 8px;
+        font-size: 10px;
+        color: #6b9aa5;
+      }
+      .title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .subtitle {
+        font-size: 11px;
+        color: #8fc3cc;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="title">ShieldCSP Helper</div>
+      <div class="subtitle">Send the current tab to your ShieldCSP scanner.</div>
+
+      <div>
+        <div class="label">ShieldCSP URL</div>
+        <input
+          id="backendUrl"
+          class="input"
+          type="text"
+          placeholder="https://shield-csp.vercel.app"
+        />
+      </div>
+
+      <div style="margin-top: 10px;">
+        <div class="label">Page URL</div>
+        <input id="pageUrl" class="input" type="text" placeholder="https://example.com" />
+      </div>
+
+      <div class="row">
+        <button id="openScanner" class="btn btn-primary">Open in Scanner</button>
+        <button id="openDashboard" class="btn btn-secondary">Dashboard</button>
+      </div>
+
+      <div class="hint">
+        Tip: Make sure you're logged into ShieldCSP in your browser. This extension just opens the right
+        dashboard pages with the current URL pre-filled.
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+  </html>
+
